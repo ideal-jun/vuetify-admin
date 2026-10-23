@@ -1,0 +1,36 @@
+{
+  "name": "Dark",
+  "desc": "A calm dark theme for night time usage",
+  "i18nkey": "theme.appearance.preset.dark",
+  "version": "1.0.0",
+  "themeScheme": "dark",
+  "themeColor": "#8b9cff",
+  "otherColor": {
+    "info": "#5aa9ff",
+    "success": "#2fc38b",
+    "warning": "#ffb443",
+    "error": "#ff6b81"
+  },
+  "themeRadius": 10,
+  "isInfoFollowPrimary": true,
+  "layout": {
+    "mode": "vertical",
+    "scrollMode": "content"
+  },
+  "page": {
+    "animate": true,
+    "animateMode": "fade-slide"
+  },
+  "tab": {
+    "visible": true,
+    "cache": true,
+    "height": 44,
+    "mode": "chrome",
+    "closeTabByMiddleClick": false
+  },
+  "footer": {
+    "visible": true,
+    "height": 48,
+    "right": true
+  }
+}

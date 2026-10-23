@@ -1,0 +1,43 @@
+{
+  "name": "Azir",
+  "desc": "A warm emerald theme with a horizontal layout",
+  "i18nkey": "theme.appearance.preset.azir",
+  "version": "1.0.0",
+  "themeScheme": "light",
+  "themeColor": "#10b981",
+  "otherColor": {
+    "info": "#0ea5e9",
+    "success": "#22c55e",
+    "warning": "#f59e0b",
+    "error": "#ef4444"
+  },
+  "themeRadius": 14,
+  "layout": {
+    "mode": "horizontal",
+    "scrollMode": "content"
+  },
+  "page": {
+    "animate": true,
+    "animateMode": "fade-bottom"
+  },
+  "tab": {
+    "visible": true,
+    "cache": true,
+    "height": 44,
+    "mode": "slider",
+    "closeTabByMiddleClick": false
+  },
+  "sider": {
+    "inverted": false,
+    "width": 248,
+    "collapsedWidth": 76,
+    "mixWidth": 92,
+    "mixCollapsedWidth": 76,
+    "mixChildMenuWidth": 208
+  },
+  "footer": {
+    "visible": true,
+    "height": 48,
+    "right": true
+  }
+}

@@ -1,0 +1,15 @@
+@import './nprogress.css';
+@import './transition.css';
+
+/* Keep table cells on one line so action buttons do not stack in narrow layouts */
+.v-data-table th,
+.v-data-table td {
+  white-space: nowrap;
+}
+
+.user-operate-drawer + .v-navigation-drawer__scrim,
+.role-operate-drawer + .v-navigation-drawer__scrim,
+.menu-operate-drawer + .v-navigation-drawer__scrim {
+  position: fixed;
+  inset: 0;
+}

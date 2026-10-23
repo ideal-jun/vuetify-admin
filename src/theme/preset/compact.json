@@ -1,0 +1,42 @@
+{
+  "name": "Compact",
+  "desc": "Denser spacing for information-heavy back offices",
+  "i18nkey": "theme.appearance.preset.compact",
+  "version": "1.0.0",
+  "themeScheme": "light",
+  "themeColor": "#0ea5e9",
+  "themeRadius": 6,
+  "header": {
+    "height": 56,
+    "breadcrumb": {
+      "visible": true,
+      "showIcon": false
+    },
+    "multilingual": {
+      "visible": false
+    },
+    "globalSearch": {
+      "visible": true
+    }
+  },
+  "tab": {
+    "visible": true,
+    "cache": true,
+    "height": 38,
+    "mode": "button",
+    "closeTabByMiddleClick": true
+  },
+  "sider": {
+    "inverted": false,
+    "width": 208,
+    "collapsedWidth": 64,
+    "mixWidth": 80,
+    "mixCollapsedWidth": 64,
+    "mixChildMenuWidth": 192
+  },
+  "footer": {
+    "visible": false,
+    "height": 44,
+    "right": true
+  }
+}

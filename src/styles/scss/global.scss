@@ -1,0 +1,5 @@
+@use './scrollbar.scss' as *;
+
+.app-scrollbar {
+  @include scrollbar;
+}
