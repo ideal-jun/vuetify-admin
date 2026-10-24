@@ -6,10 +6,10 @@ import { SetupStoreId } from '@/enum';
 import { env } from '@/env';
 import { useBoolean } from '@/hooks/common/boolean';
 import { router, setupBuiltinRoutes } from '@/router';
+import { transformBackendRouters } from '@/router/dynamic';
 import { getRouteName } from '@/router/route-key';
 import type { ElegantConstRoute, LastLevelRouteKey, RouteKey, RoutePath } from '@/router/route-key';
 import { createStaticRoutes, getAuthVueRoutes } from '@/router/routes';
-import { transformRuoYiRouters } from '@/router/ruoyi';
 import { fetchGetRouters } from '@/service/api';
 
 import { useAuthStore } from '../auth';
@@ -204,7 +204,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
         await authStore.resetStore();
       }
     } else {
-      addAuthRoutes(transformRuoYiRouters(data));
+      addAuthRoutes(transformBackendRouters(data));
 
       handleConstantAndAuthRoutes();
 
@@ -253,7 +253,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
         : isRouteExistByRoutePath(routePath, staticAuthRoutes);
     }
 
-    // The RuoYi backend already filtered the router tree; check the registered auth routes locally.
+    // The backend backend already filtered the router tree; check the registered auth routes locally.
     return isRouteExistByRoutePath(routePath, authRoutes.value);
   }
 

@@ -1,7 +1,8 @@
-# RuoYi-Cloud backend
+# Backend setup
 
-The template targets a [RuoYi-Cloud](https://gitee.com/y_project/RuoYi-Cloud) backend (springboot3 branch, verified
-with v3.6.8). The service layer targets RuoYi only, and the test suite stubs the service modules instead of shipping a fake backend.
+The frontend uses [RuoYi-Cloud](https://gitee.com/y_project/RuoYi-Cloud) as its backend (springboot3 branch, verified
+with v3.6.8). The application code is backend-generic: service, type and router naming do not depend on RuoYi specifics.
+The test suite stubs the service modules, so it runs without the backend.
 
 ## Frontend
 
@@ -10,20 +11,20 @@ pnpm install
 pnpm dev        # http://localhost:3000
 ```
 
-Log in with the RuoYi administrator (`admin` / `admin123`). The login form renders the gateway captcha (RuoYi-Cloud
+Log in with the backend administrator (`admin` / `admin123`). The login form renders the gateway captcha (RuoYi-Cloud
 has no SMS/phone-code or password-reset endpoints, so those flows are not part of the UI).
 
 `.env` is committed and contains the local defaults:
 
-| Variable                                | Value                         | Purpose                                         |
-| --------------------------------------- | ----------------------------- | ----------------------------------------------- |
-| `VITE_SERVICE_BASE_URL`                 | `/api`                        | Dev-server proxy prefix                         |
-| `VITE_HTTP_PROXY` / `VITE_PROXY_TARGET` | `Y` / `http://127.0.0.1:8888` | Proxy `/api` to the RuoYi gateway               |
-| `VITE_SERVICE_SUCCESS_CODE`             | `200`                         | RuoYi success code                              |
-| `VITE_SERVICE_LOGOUT_CODES`             | `401`                         | Invalid/expired token                           |
-| `VITE_AUTH_ROUTE_MODE`                  | `static`                      | Keep the template routes (see limitations)      |
-| `VITE_STATIC_SUPER_ROLE`                | `admin`                       | RuoYi super role bypasses the static role check |
-| `VITE_DEFAULT_USER_PASSWORD`            | `admin123`                    | Password used by the create-user form           |
+| Variable                                | Value                         | Purpose                                           |
+| --------------------------------------- | ----------------------------- | ------------------------------------------------- |
+| `VITE_SERVICE_BASE_URL`                 | `/api`                        | Dev-server proxy prefix                           |
+| `VITE_HTTP_PROXY` / `VITE_PROXY_TARGET` | `Y` / `http://127.0.0.1:8888` | Proxy `/api` to the gateway                       |
+| `VITE_SERVICE_SUCCESS_CODE`             | `200`                         | backend success code                              |
+| `VITE_SERVICE_LOGOUT_CODES`             | `401`                         | Invalid/expired token                             |
+| `VITE_AUTH_ROUTE_MODE`                  | `static`                      | Keep the template routes (see limitations)        |
+| `VITE_STATIC_SUPER_ROLE`                | `admin`                       | backend super role bypasses the static role check |
+| `VITE_DEFAULT_USER_PASSWORD`            | `admin123`                    | Password used by the create-user form             |
 
 Put machine-specific overrides in `.env.local` (git ignored).
 
@@ -31,19 +32,19 @@ Put machine-specific overrides in `.env.local` (git ignored).
 
 ## Dynamic routes
 
-After login the route store requests `GET /system/menu/getRouters` and `src/router/ruoyi.ts` transforms the returned
+After login the route store requests `GET /system/menu/getRouters` and `src/router/dynamic.ts` transforms the returned
 tree into Vue routes and menus:
 
 - `component: "Layout"` entries become the base-layout wrapper; `ParentView` directories keep their nesting.
 - `system/user|role|menu/index` map to the template views (canonical route names `system_user`, `system_role`,
   `system_menu`); every other component path is registered as the **unsupported placeholder** page, so the complete
-  RuoYi menu tree (dept, post, dict, config, notice, logs, monitor, tool, ...) is rendered.
+  backend menu tree (dept, post, dict, config, notice, logs, monitor, tool, ...) is rendered.
 - external links (entries with `meta.link`, e.g. Sentinel/Nacos/Swagger/若依官网) become `/external/...` routes
   with `meta.href`; clicking them opens the target in a new tab.
 - `hidden`, `noCache` and the tree order map to `hideInMenu`, `keepAlive` and menu order; icons are translated
-  from RuoYi's Element icon names to the bundled MDI font.
+  from Element icon names to the bundled MDI font.
 
-Adding a real view for another RuoYi page only requires an entry in `COMPONENT_VIEWS` in `src/router/ruoyi.ts` plus
+Adding a real view for another backend page only requires an entry in `COMPONENT_VIEWS` in `src/router/dynamic.ts` plus
 the view component. `VITE_AUTH_ROUTE_MODE=static` still uses the template's bundled routes.
 
 ## Backend prerequisites
@@ -65,7 +66,7 @@ The backend repository is cloned next to the frontend:
 git clone -b springboot3 https://gitee.com/y_project/RuoYi-Cloud.git
 ```
 
-1. **Business database** — create a separate schema (the template's environment may already contain other RuoYi
+1. **Business database** — create a separate schema (the template's environment may already contain other backend
    schemas) and import the bundled SQL:
 
    ```bash
@@ -132,35 +133,35 @@ git clone -b springboot3 https://gitee.com/y_project/RuoYi-Cloud.git
 
 ## Screenshots
 
-The login form uses the RuoYi gateway captcha:
+The login form uses the backend gateway captcha:
 
-![RuoYi login captcha](images/ruoyi-login.png)
+![backend login captcha](images/backend-login.png)
 
-After a successful login the dashboard shows the signed-in RuoYi user:
+After a successful login the dashboard shows the signed-in backend user:
 
-![RuoYi home dashboard](images/ruoyi-home.png)
+![backend home dashboard](images/backend-home.png)
 
 The sidebar, breadcrumb and tabs are generated from the backend menu tree; pages without a template view render the
 unsupported placeholder:
 
-![RuoYi dynamic menu and unsupported page](images/ruoyi-unsupported.png)
+![backend dynamic menu and unsupported page](images/backend-unsupported.png)
 
-The system user page reads the RuoYi `/system/user/list` endpoint (roles fall back to "—" because the list endpoint
+The system user page reads the backend `/system/user/list` endpoint (roles fall back to "—" because the list endpoint
 does not include them):
 
-![RuoYi user management page](images/ruoyi-user.png)
+![backend user management page](images/backend-user.png)
 
-The menu management page renders the flat RuoYi menu list as a depth-first tree (directories, pages and button permissions):
+The menu management page renders the flat backend menu list as a depth-first tree (directories, pages and button permissions):
 
-![RuoYi menu management tree](images/ruoyi-menu.png)
+![backend menu management tree](images/backend-menu.png)
 
 The action column uses Vuetify's built-in `fixed: 'end'` column option, so it stays pinned to the right edge when the table scrolls horizontally:
 
-![Sticky action column](images/ruoyi-sticky-actions.png)
+![Sticky action column](images/backend-sticky-actions.png)
 
 ## API mapping
 
-| UI feature               | RuoYi endpoint                                                                                             |
+| UI feature               | backend endpoint                                                                                           |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | Captcha                  | `GET /code` (`Accept: text/plain`)                                                                         |
 | Route tree / menu        | `GET /system/menu/getRouters` (drives the dynamic routes and sidebar)                                      |
@@ -171,20 +172,20 @@ The action column uses Vuetify's built-in `fixed: 'end'` column option, so it st
 | Menu CRUD                | `/system/menu/list` (flat), `POST/PUT /system/menu`, `DELETE /system/menu/{menuId}`                        |
 | Home dashboard           | Composed client-side from user/role/menu counts                                                            |
 
-The service layer uses these RuoYi fields directly (no adapter/mapping layer): flat `{ total, rows }` tables, status
+The service layer uses these backend fields directly: flat `{ total, rows }` tables, status
 `0`/`1`, sex `0`/`1`/`2`, permission codes such as `system:user:remove`, and menu types `M`/`C`/`F`. Page and app tests
 stub the service modules, so no backend is required to run the suite.
 
 ## Known limitations
 
-- **Unsupported pages**: the menu tree comes from RuoYi, but only `system/user`, `system/role` and `system/menu`
+- **Pages without a view**: the menu tree comes from the backend, but only `system/user`, `system/role` and `system/menu`
   have template views. The other pages (dept/post/dict/config/notice/logs/monitor/tool) render the placeholder page with
   the backend title; they are real dynamic routes, just without a custom UI.
-- **Server-side filters**: RuoYi only supports `userName` / `phonenumber` / `status` for users and
+- **Server-side filters**: the backend only supports `userName` / `phonenumber` / `status` for users and
   `roleName` / `roleKey` / `status` for roles. The extra template filters (nickname, email, gender, sorting) are
-  no-ops in RuoYi mode.
-- **Role user count** is not returned by the RuoYi role list, so the role table shows `0`.
+  no-ops in backend mode.
+- **Role user count** is not returned by the backend role list, so the role table shows `0`.
 - Creating a user uses `VITE_DEFAULT_USER_PASSWORD` and `deptId = 100`; creating a role sends
   `roleSort = 99` and no menu permissions (the template has no permission-tree UI).
-- Menu creation sends an empty `component`; RuoYi may require one for page-type menus.
+- Menu creation sends an empty `component`; backend may require one for page-type menus.
 - The home dashboard values are derived from real user/role/menu counts; orders/revenue/traffic values are synthetic.

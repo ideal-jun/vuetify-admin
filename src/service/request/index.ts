@@ -213,7 +213,7 @@ async function execute<T>(
     const responseCode = String(backendResponse.code);
 
     if (responseCode === env.serviceCodes.success) {
-      // RuoYi returns flat payloads for getInfo and table endpoints; expose them directly as data.
+      // backend returns flat payloads for getInfo and table endpoints; expose them directly as data.
       const data = 'data' in backendResponse ? backendResponse.data : backendResponse;
 
       return { data: data as T, error: null, response: backendResponse };

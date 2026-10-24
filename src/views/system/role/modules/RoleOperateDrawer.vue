@@ -44,7 +44,7 @@ const rules = computed(() => {
 
   return {
     roleName: createRequiredRule($t('form.roleName.required')),
-    // RuoYi role keys are free-form (the built-in ones are lowercase), the backend validates them.
+    // backend role keys are free-form (the built-in ones are lowercase), the backend validates them.
     roleKey: [createRequiredRule($t('form.roleKey.required'))],
   };
 });

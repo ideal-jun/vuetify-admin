@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { request } from '@/service/request';
-import getInfoFixture from '@/test/fixtures/ruoyi/get-info.json';
+import getInfoFixture from '@/test/fixtures/backend/get-info.json';
 
 import { fetchGetCaptcha, fetchGetUserInfo, fetchLogin, fetchLogout } from './auth';
 
@@ -11,8 +11,8 @@ vi.mock('@/service/request', () => ({
 
 const requestMock = vi.mocked(request);
 
-describe('RuoYi auth service', () => {
-  it('posts the RuoYi login payload and returns the login data as-is', async () => {
+describe('backend auth service', () => {
+  it('posts the backend login payload and returns the login data as-is', async () => {
     requestMock.mockResolvedValueOnce({
       data: { access_token: 'ry-token', expires_in: 7200 },
       error: null,
@@ -78,7 +78,7 @@ describe('RuoYi auth service', () => {
     expect(result.data?.permissions).toEqual(['*:*:*']);
   });
 
-  it('logs out against the RuoYi endpoint', async () => {
+  it('logs out against the backend endpoint', async () => {
     requestMock.mockResolvedValueOnce({ data: null, error: null });
 
     await expect(fetchLogout()).resolves.toEqual({ data: null, error: null });

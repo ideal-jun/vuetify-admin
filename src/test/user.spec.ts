@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
 import { setupTestAuth } from '@/test/auth';
-import roleOptionFixture from '@/test/fixtures/ruoyi/role-option.json';
-import userListFixture from '@/test/fixtures/ruoyi/user-list.json';
+import roleOptionFixture from '@/test/fixtures/backend/role-option.json';
+import userListFixture from '@/test/fixtures/backend/user-list.json';
 import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/test/wait';
 import SystemUser from '@/views/system/user/index.vue';
 
@@ -71,7 +71,7 @@ function mountPage() {
 }
 
 describe('user management page', () => {
-  it('renders the RuoYi user table with sex, status and department fields', async () => {
+  it('renders the backend user table with sex, status and department fields', async () => {
     const wrapper = mountPage();
 
     await waitForText(wrapper, '第 1-2 条，共 2 条');

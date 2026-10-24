@@ -44,7 +44,7 @@ const captchaLoading = ref(false);
 
 const captchaImage = computed(() => (captcha.img ? `data:image/jpeg;base64,${captcha.img}` : ''));
 
-/** The RuoYi captcha is not always a 6-digit SMS code, so only require a non-empty value */
+/** The backend captcha is not always a 6-digit SMS code, so only require a non-empty value */
 const captchaRules = computed(() => [createRequiredRule($t('form.code.required'))]);
 
 const formRef = ref<{
@@ -61,7 +61,7 @@ const form = reactive<LoginForm>({
   rememberMe: remembered,
 });
 
-/** Load or refresh the image captcha of the RuoYi backend */
+/** Load or refresh the image captcha of the backend backend */
 async function loadCaptcha() {
   captchaLoading.value = true;
 
@@ -265,7 +265,7 @@ async function handleSubmit() {
           class="mt-6 flex items-center gap-2 rounded-2xl bg-primary/5 p-4 text-xs text-primary font-600"
         >
           <VIcon icon="mdi-information-outline" size="16" />
-          {{ $t('page.login.common.ruoyiDemoHint') }}
+          {{ $t('page.login.common.demoHint') }}
         </div>
       </div>
 

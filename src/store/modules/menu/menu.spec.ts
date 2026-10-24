@@ -7,7 +7,7 @@ import {
   fetchGetMenuList,
   fetchUpdateMenu,
 } from '@/service/api/system-manage';
-import menuListFixture from '@/test/fixtures/ruoyi/menu-list.json';
+import menuListFixture from '@/test/fixtures/backend/menu-list.json';
 
 import { useMenuStore } from './index';
 
@@ -18,14 +18,14 @@ vi.mock('@/service/api/system-manage', () => ({
   fetchUpdateMenu: vi.fn(),
 }));
 
-const menuRows = menuListFixture.data as unknown as Api.RuoYi.Menu[];
+const menuRows = menuListFixture.data as unknown as Api.Backend.Menu[];
 
 const getMenuListMock = vi.mocked(fetchGetMenuList);
 const createMenuMock = vi.mocked(fetchCreateMenu);
 const updateMenuMock = vi.mocked(fetchUpdateMenu);
 const deleteMenuMock = vi.mocked(fetchDeleteMenu);
 
-let rows: Api.RuoYi.Menu[] = [];
+let rows: Api.Backend.Menu[] = [];
 let nextMenuId = 9000;
 
 function cloneRows() {
@@ -71,7 +71,7 @@ beforeEach(() => {
 });
 
 describe('useMenuStore', () => {
-  it('loads the flat RuoYi menu rows and computes the tree depth', async () => {
+  it('loads the flat backend menu rows and computes the tree depth', async () => {
     const store = useMenuStore();
 
     await store.loadMenus();
@@ -84,7 +84,7 @@ describe('useMenuStore', () => {
     expect(store.flatMenus.find((menu) => menu.menuId === 100)?.depth).toBe(1);
     expect(store.flatMenus.find((menu) => menu.menuId === 1000)?.depth).toBe(2);
     expect(store.flatMenus.find((menu) => menu.menuId === 1039)?.depth).toBe(3);
-    // RuoYi returns roots first and then all children; the store must flatten it depth-first.
+    // backend returns roots first and then all children; the store must flatten it depth-first.
     expect(store.flatMenus.map((menu) => menu.menuId)).toEqual([
       1, 100, 1000, 1001, 1002, 1003, 101, 102, 108, 500, 1039, 2, 3, 4,
     ]);

@@ -1,24 +1,24 @@
 declare namespace Api {
   /**
-   * namespace RuoYi
+   * namespace Backend
    *
-   * The application consumes the RuoYi-Cloud response shapes directly: the types below mirror the backend DTOs and are
+   * The application consumes the backend response shapes directly: the types below mirror the backend DTOs and are
    * used by the service layer, the stores and the views without an intermediate mapping layer.
    */
-  namespace RuoYi {
-    /** RuoYi status: "0" normal, "1" disabled */
+  namespace Backend {
+    /** backend status: "0" normal, "1" disabled */
     type Status = '0' | '1';
 
-    /** RuoYi sex: "0" male, "1" female, "2" unknown */
+    /** backend sex: "0" male, "1" female, "2" unknown */
     type Sex = '0' | '1' | '2';
 
-    /** RuoYi menu type: "M" directory, "C" menu, "F" button */
+    /** backend menu type: "M" directory, "C" menu, "F" button */
     type MenuType = 'M' | 'C' | 'F';
 
-    /** RuoYi visible flag: "0" visible, "1" hidden */
+    /** backend visible flag: "0" visible, "1" hidden */
     type Visible = '0' | '1';
 
-    /** A flat paginated RuoYi response (no "data" envelope) */
+    /** A flat paginated backend response (no "data" envelope) */
     interface TableData<T> {
       code: number;
       msg: string;

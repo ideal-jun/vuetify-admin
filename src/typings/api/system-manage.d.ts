@@ -2,15 +2,15 @@ declare namespace Api {
   /**
    * namespace SystemManage
    *
-   * The system management views talk to RuoYi fields directly; the aliases below keep the view imports short.
+   * The system management views talk to backend fields directly; the aliases below keep the view imports short.
    */
   namespace SystemManage {
-    type User = Api.RuoYi.User;
-    type Role = Api.RuoYi.Role;
-    type Menu = Api.RuoYi.Menu;
+    type User = Api.Backend.User;
+    type Role = Api.Backend.Role;
+    type Menu = Api.Backend.Menu;
 
-    type UserList = Api.RuoYi.TableData<User>;
-    type RoleList = Api.RuoYi.TableData<Role>;
+    type UserList = Api.Backend.TableData<User>;
+    type RoleList = Api.Backend.TableData<Role>;
 
     type AllRole = Pick<Role, 'roleId' | 'roleName' | 'roleKey'>;
 
@@ -18,7 +18,7 @@ declare namespace Api {
     type UserSearchModel = {
       userName: string | null;
       phonenumber: string | null;
-      status: Api.RuoYi.Status | null;
+      status: Api.Backend.Status | null;
     };
 
     /** The query params sent to /system/user/list */
@@ -43,7 +43,7 @@ declare namespace Api {
     type RoleSearchModel = {
       roleName: string | null;
       roleKey: string | null;
-      status: Api.RuoYi.Status | null;
+      status: Api.Backend.Status | null;
     };
 
     type RoleSearchParams = RoleSearchModel & {

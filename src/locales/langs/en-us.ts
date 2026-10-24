@@ -257,7 +257,7 @@ export default {
     unsupported: {
       title: 'Page not implemented',
       description:
-        'The RuoYi menu exists, but this template has no page for it yet. Implement the view or hide the menu in RuoYi.',
+        'This backend menu has no page implementation yet. Add the view, or hide the menu in the backend.',
     },
     login: {
       common: {
@@ -269,7 +269,7 @@ export default {
         welcome: 'Welcome back',
         loginButton: 'Sign in',
         rememberMe: 'Remember me',
-        ruoyiDemoHint: 'RuoYi demo account: admin / admin123',
+        demoHint: 'Demo account: admin / admin123',
         captchaPlaceholder: 'Please enter the captcha',
         captchaRefresh: 'Refresh captcha',
         account: 'Account',

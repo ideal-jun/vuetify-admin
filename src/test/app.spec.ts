@@ -7,10 +7,10 @@ import { env } from '@/env';
 import { router, setupBuiltinRoutes } from '@/router';
 import { createRouterGuard } from '@/router/guard';
 import { useAuthStore } from '@/store/modules/auth';
-import getInfoFixture from '@/test/fixtures/ruoyi/get-info.json';
-import getRoutersFixture from '@/test/fixtures/ruoyi/get-routers.json';
-import roleOptionFixture from '@/test/fixtures/ruoyi/role-option.json';
-import userListFixture from '@/test/fixtures/ruoyi/user-list.json';
+import getInfoFixture from '@/test/fixtures/backend/get-info.json';
+import getRoutersFixture from '@/test/fixtures/backend/get-routers.json';
+import roleOptionFixture from '@/test/fixtures/backend/role-option.json';
+import userListFixture from '@/test/fixtures/backend/user-list.json';
 import { pinia } from '@/test/setup';
 import { waitForText } from '@/test/wait';
 import { localStg } from '@/utils/storage';
@@ -62,7 +62,7 @@ vi.mock('@/service/api', () => ({
 }));
 
 describe('App integration', () => {
-  it('renders the dynamic RuoYi menu, logs in and opens the mapped pages', async () => {
+  it('renders the dynamic backend menu, logs in and opens the mapped pages', async () => {
     localStg.remove('token');
     localStg.remove('lastLoginUserId');
     localStg.remove('globalTabs');
@@ -86,7 +86,7 @@ describe('App integration', () => {
     expect(wrapper.text()).toContain('用户总数');
     expect(wrapper.text()).toContain('首页');
 
-    // The login page loads the RuoYi captcha and must redirect back to the home page after login.
+    // The login page loads the backend captcha and must redirect back to the home page after login.
     await router.push('/login');
 
     await vi.waitFor(() => {
@@ -103,7 +103,7 @@ describe('App integration', () => {
       expect(router.currentRoute.value.path).toBe('/home');
     });
 
-    // The dynamic getRouters tree registers the RuoYi menus.
+    // The dynamic getRouters tree registers the backend menus.
     await waitForText(wrapper, '系统管理');
 
     // The supported view is mapped to the template page.
@@ -112,12 +112,12 @@ describe('App integration', () => {
     await waitForText(wrapper, '用户列表');
     expect(wrapper.text()).toContain('第 1-2 条，共 2 条');
 
-    // The unsupported RuoYi page falls back to the placeholder view.
+    // A backend page without a view falls back to the placeholder.
     await router.push('/system/dept');
 
     await waitForText(wrapper, '部门管理');
-    // The placeholder keeps the RuoYi title and explains that the page is not adapted yet.
-    expect(wrapper.text()).toContain('当前模板还没有对应页面');
+    // The placeholder keeps the backend title and explains that the page is not implemented yet.
+    expect(wrapper.text()).toContain('当前还没有对应页面');
 
     // The root path redirects to the configured home route.
     await router.push('/');

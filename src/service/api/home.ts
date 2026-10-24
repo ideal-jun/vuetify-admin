@@ -68,7 +68,7 @@ function composeHomeOverview(counts: {
   };
 }
 
-/** Get the data rendered by the home page, composed from the RuoYi lists */
+/** Get the data rendered by the home page, composed from the backend lists */
 export async function fetchGetHomeOverview(): Promise<
   App.Service.FlatResponseData<Api.Home.Overview>
 > {

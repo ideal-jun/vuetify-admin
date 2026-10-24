@@ -1,6 +1,6 @@
 import { transformRecordToOption } from '@/utils/common';
 
-/** RuoYi status: "0" normal, "1" disabled */
+/** backend status: "0" normal, "1" disabled */
 export const enableStatusRecord: Record<Api.Common.EnableStatus, App.I18n.I18nKey> = {
   '0': 'page.system.common.status.normal',
   '1': 'page.system.common.status.disabled',
@@ -8,8 +8,8 @@ export const enableStatusRecord: Record<Api.Common.EnableStatus, App.I18n.I18nKe
 
 export const enableStatusOptions = transformRecordToOption(enableStatusRecord);
 
-/** RuoYi sex: "0" male, "1" female, "2" unknown */
-export const userSexRecord: Record<Api.RuoYi.Sex, App.I18n.I18nKey> = {
+/** backend sex: "0" male, "1" female, "2" unknown */
+export const userSexRecord: Record<Api.Backend.Sex, App.I18n.I18nKey> = {
   '0': 'page.system.user.sex.male',
   '1': 'page.system.user.sex.female',
   '2': 'page.system.user.sex.unknown',
@@ -17,8 +17,8 @@ export const userSexRecord: Record<Api.RuoYi.Sex, App.I18n.I18nKey> = {
 
 export const userSexOptions = transformRecordToOption(userSexRecord);
 
-/** RuoYi menu type: "M" directory, "C" menu, "F" button */
-export const menuTypeRecord: Record<Api.RuoYi.MenuType, App.I18n.I18nKey> = {
+/** backend menu type: "M" directory, "C" menu, "F" button */
+export const menuTypeRecord: Record<Api.Backend.MenuType, App.I18n.I18nKey> = {
   M: 'page.system.menu.type.directory',
   C: 'page.system.menu.type.menu',
   F: 'page.system.menu.type.button',
@@ -26,15 +26,15 @@ export const menuTypeRecord: Record<Api.RuoYi.MenuType, App.I18n.I18nKey> = {
 
 export const menuTypeOptions = transformRecordToOption(menuTypeRecord);
 
-/** RuoYi menu visibility: "0" visible, "1" hidden */
-export const menuVisibleRecord: Record<Api.RuoYi.Visible, App.I18n.I18nKey> = {
+/** backend menu visibility: "0" visible, "1" hidden */
+export const menuVisibleRecord: Record<Api.Backend.Visible, App.I18n.I18nKey> = {
   '0': 'page.system.common.visible.show',
   '1': 'page.system.common.visible.hide',
 };
 
 export const menuVisibleOptions = transformRecordToOption(menuVisibleRecord);
 
-/** Button permission codes used by the management pages, they are the raw RuoYi permission strings */
+/** Button permission codes used by the management pages, they are the raw backend permission strings */
 export const permissionCodes = {
   menuAdd: 'system:menu:add',
   menuEdit: 'system:menu:edit',

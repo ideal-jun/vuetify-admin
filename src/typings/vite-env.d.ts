@@ -93,7 +93,7 @@ declare namespace Env {
     readonly VITE_STORAGE_PREFIX?: string;
     /** Whether to automatically detect updates after the application is packaged */
     readonly VITE_AUTOMATICALLY_DETECT_UPDATE?: CommonType.YesOrNo;
-    /** Password used when creating a user from the frontend (RuoYi requires one) */
+    /** Password used when creating a user from the frontend (backend requires one) */
     readonly VITE_DEFAULT_USER_PASSWORD?: string;
     /** Show proxy url log in terminal */
     readonly VITE_PROXY_LOG?: CommonType.YesOrNo;

@@ -108,7 +108,7 @@ export function sortRoutesByOrder(routes: ElegantConstRoute[]) {
 /**
  * Resolve a route path against its parent path
  *
- * The static routes always declare absolute paths, while the RuoYi router tree uses relative paths for the children.
+ * The static routes always declare absolute paths, while the backend router tree uses relative paths for the children.
  */
 export function resolveRoutePath(parentPath: string, routePath: string) {
   if (routePath.startsWith('/')) {

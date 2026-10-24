@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import getRoutersFixture from '@/test/fixtures/ruoyi/get-routers.json';
+import getRoutersFixture from '@/test/fixtures/backend/get-routers.json';
 
+import { transformBackendRouters } from './dynamic';
 import type { ElegantConstRoute } from './route-key';
-import { transformRuoYiRouters } from './ruoyi';
 
-const routers = getRoutersFixture.data as unknown as Api.RuoYi.RouterRecord[];
+const routers = getRoutersFixture.data as unknown as Api.Backend.RouterRecord[];
 
 function flattenRoutes(routes: ElegantConstRoute[]): ElegantConstRoute[] {
   return routes.flatMap((route) => [
@@ -14,7 +14,7 @@ function flattenRoutes(routes: ElegantConstRoute[]): ElegantConstRoute[] {
   ]);
 }
 
-function collectExternalHrefs(records: Api.RuoYi.RouterRecord[]): string[] {
+function collectExternalHrefs(records: Api.Backend.RouterRecord[]): string[] {
   return records.flatMap((record) => {
     const isExternal = Boolean(record.meta?.link) || record.path.startsWith('http');
     const hrefs = isExternal ? [record.meta?.link || record.path] : [];
@@ -23,7 +23,7 @@ function collectExternalHrefs(records: Api.RuoYi.RouterRecord[]): string[] {
   });
 }
 
-const routes = transformRuoYiRouters(routers);
+const routes = transformBackendRouters(routers);
 const flatRoutes = flattenRoutes(routes);
 
 function findRoute(name: string) {
@@ -34,7 +34,7 @@ function childOf(routesToSearch: ElegantConstRoute[], name: string) {
   return routesToSearch.find((route) => route.name === name);
 }
 
-describe('transformRuoYiRouters', () => {
+describe('transformBackendRouters', () => {
   it('wraps the top-level Layout entries in a base layout route', () => {
     expect(routes).toHaveLength(4);
 
@@ -56,11 +56,11 @@ describe('transformRuoYiRouters', () => {
       'system_user',
       'system_role',
       'system_menu',
-      'ruoyi_dept',
-      'ruoyi_post',
-      'ruoyi_dict',
-      'ruoyi_config',
-      'ruoyi_notice',
+      'backend_dept',
+      'backend_post',
+      'backend_dict',
+      'backend_config',
+      'backend_notice',
       'log',
     ]);
 
@@ -68,7 +68,7 @@ describe('transformRuoYiRouters', () => {
     expect(findRoute('tool')).toMatchObject({ path: '/tool', component: 'layout.base' });
   });
 
-  it('maps the supported RuoYi views to the canonical route names and components', () => {
+  it('maps the supported backend views to the canonical route names and components', () => {
     const system = findRoute('system');
 
     expect(childOf(system?.children ?? [], 'system_user')).toMatchObject({
@@ -91,17 +91,17 @@ describe('transformRuoYiRouters', () => {
     });
   });
 
-  it('registers the unsupported RuoYi views with the placeholder component', () => {
-    const dept = findRoute('ruoyi_dept');
+  it('registers the unsupported backend views with the placeholder component', () => {
+    const dept = findRoute('backend_dept');
 
     expect(dept).toMatchObject({
-      name: 'ruoyi_dept',
+      name: 'backend_dept',
       path: 'dept',
       component: 'view.unsupported',
       meta: { title: '部门管理', icon: 'mdi-file-tree', order: 4 },
     });
-    expect(findRoute('ruoyi_post')?.component).toBe('view.unsupported');
-    expect(findRoute('ruoyi_online')?.component).toBe('view.unsupported');
+    expect(findRoute('backend_post')?.component).toBe('view.unsupported');
+    expect(findRoute('backend_online')?.component).toBe('view.unsupported');
   });
 
   it('keeps ParentView directories nested', () => {
@@ -114,8 +114,8 @@ describe('transformRuoYiRouters', () => {
       meta: { title: '日志管理', icon: 'mdi-file-document-outline', order: 9 },
     });
     expect(log?.children?.map((child) => child.name)).toEqual([
-      'ruoyi_operlog',
-      'ruoyi_logininfor',
+      'backend_operlog',
+      'backend_logininfor',
     ]);
     expect(log?.children?.[0]).toMatchObject({
       path: 'operlog',
@@ -158,7 +158,7 @@ describe('transformRuoYiRouters', () => {
   });
 
   it('maps hidden, noCache and order to the route meta', () => {
-    const customRouters: Api.RuoYi.RouterRecord[] = [
+    const customRouters: Api.Backend.RouterRecord[] = [
       {
         name: 'Hidden',
         path: '/hidden',
@@ -168,10 +168,10 @@ describe('transformRuoYiRouters', () => {
       },
     ];
 
-    const [hiddenRoute] = transformRuoYiRouters(customRouters);
+    const [hiddenRoute] = transformBackendRouters(customRouters);
 
     expect(hiddenRoute).toMatchObject({
-      name: 'ruoyi_hidden',
+      name: 'backend_hidden',
       path: '/hidden',
       meta: {
         title: '隐藏页面',
@@ -182,17 +182,17 @@ describe('transformRuoYiRouters', () => {
     });
   });
 
-  it('maps RuoYi icon names to MDI and falls back for unknown icons', () => {
+  it('maps backend icon names to MDI and falls back for unknown icons', () => {
     expect(findRoute('system_user')?.meta?.icon).toBe('mdi-account-outline');
     expect(findRoute('system_role')?.meta?.icon).toBe('mdi-account-group-outline');
-    expect(findRoute('ruoyi_dept')?.meta?.icon).toBe('mdi-file-tree');
+    expect(findRoute('backend_dept')?.meta?.icon).toBe('mdi-file-tree');
 
-    const [unknownIconRoute, passthroughIconRoute, missingIconRoute] = transformRuoYiRouters([
+    const [unknownIconRoute, passthroughIconRoute, missingIconRoute] = transformBackendRouters([
       {
         name: 'Unknown',
         path: '/unknown',
         component: 'system/user/index',
-        meta: { title: '未知图标', icon: 'not-a-ruoyi-icon' },
+        meta: { title: '未知图标', icon: 'not-a-backend-icon' },
       },
       {
         name: 'Passthrough',

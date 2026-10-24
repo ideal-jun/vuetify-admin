@@ -10,7 +10,7 @@ export function useAuth() {
 
     const { permissions } = authStore.userInfo;
 
-    // RuoYi uses "*:*:*" for a user that is allowed to do everything.
+    // backend uses "*:*:*" for a user that is allowed to do everything.
     if (authStore.isStaticSuper || permissions.includes('*') || permissions.includes('*:*:*')) {
       return true;
     }

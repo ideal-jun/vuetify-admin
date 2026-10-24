@@ -9,20 +9,20 @@ import {
   fetchUpdateMenu,
 } from '@/service/api/system-manage';
 
-export type MenuTableRow = Api.RuoYi.Menu & {
+export type MenuTableRow = Api.Backend.Menu & {
   depth: number;
 };
 
 /**
- * Build the tree-ordered flat list from the RuoYi menu list
+ * Build the tree-ordered flat list from the backend menu list
  *
- * RuoYi returns the flat rows ordered by parentId (all roots first, then every child, then the buttons), which is not
+ * backend returns the flat rows ordered by parentId (all roots first, then every child, then the buttons), which is not
  * suitable for a tree table. This walks every menu's children recursively, so each parent is immediately followed by
  * its descendants, with siblings sorted by orderNum.
  */
-function flattenMenus(items: Api.RuoYi.Menu[]): MenuTableRow[] {
+function flattenMenus(items: Api.Backend.Menu[]): MenuTableRow[] {
   const menuMap = new Map(items.map((item) => [item.menuId, item]));
-  const childrenMap = new Map<number, Api.RuoYi.Menu[]>();
+  const childrenMap = new Map<number, Api.Backend.Menu[]>();
 
   for (const item of items) {
     const parentId = menuMap.has(item.parentId) ? item.parentId : 0;
@@ -67,13 +67,13 @@ function flattenMenus(items: Api.RuoYi.Menu[]): MenuTableRow[] {
 }
 
 export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
-  const menus = ref<Api.RuoYi.Menu[]>([]);
+  const menus = ref<Api.Backend.Menu[]>([]);
   const isLoading = ref(false);
   const isLoaded = ref(false);
 
   const flatMenus = computed(() => flattenMenus(menus.value));
 
-  /** Load the flat menu rows from the RuoYi /system/menu/list endpoint */
+  /** Load the flat menu rows from the backend /system/menu/list endpoint */
   async function loadMenus() {
     if (isLoaded.value || isLoading.value) {
       return;
@@ -128,9 +128,9 @@ export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
   }
 
   /**
-   * Toggle the RuoYi menu status ("0" enabled, "1" disabled)
+   * Toggle the backend menu status ("0" enabled, "1" disabled)
    *
-   * RuoYi has no menu status endpoint, so the full menu payload is sent with the flipped status.
+   * backend has no menu status endpoint, so the full menu payload is sent with the flipped status.
    */
   async function toggleStatus(menuId: number) {
     const target = menus.value.find((item) => item.menuId === menuId);

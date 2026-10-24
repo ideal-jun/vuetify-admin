@@ -15,7 +15,7 @@ describe('env', () => {
     expect(env.authRouteMode).toBe('dynamic');
   });
 
-  it('provides the RuoYi service codes', () => {
+  it('provides the backend service codes', () => {
     expect(env.serviceCodes.success).toBe('200');
     expect(env.serviceCodes.logout).toContain('401');
   });

@@ -26,7 +26,7 @@ describe('useAuth', () => {
     expect(hasAuth(['anything', 'else'])).toBe(true);
   });
 
-  it('grants every permission for the RuoYi wildcard', () => {
+  it('grants every permission for the backend wildcard', () => {
     const { hasAuth } = setup(['*:*:*']);
 
     expect(hasAuth('system:user:add')).toBe(true);

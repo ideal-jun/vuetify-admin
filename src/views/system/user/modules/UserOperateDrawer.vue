@@ -17,7 +17,7 @@ interface Props {
   operateType: 'add' | 'edit';
   /** The editing row data */
   rowData?: Api.SystemManage.User | null;
-  /** The role options, the values are RuoYi role ids */
+  /** The role options, the values are backend role ids */
   roleOptions: CommonType.Option<number>[];
 }
 

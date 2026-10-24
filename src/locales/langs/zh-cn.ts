@@ -254,9 +254,8 @@ const zhCN: App.I18n.Schema = {
   },
   page: {
     unsupported: {
-      title: '页面尚未适配',
-      description:
-        '该 RuoYi 菜单已由后端返回，但当前模板还没有对应页面。可以实现页面或在 RuoYi 中隐藏该菜单。',
+      title: '页面待实现',
+      description: '该菜单已由后端返回，但当前还没有对应页面。可以实现该页面，或在后端隐藏此菜单。',
     },
     login: {
       common: {
@@ -268,7 +267,7 @@ const zhCN: App.I18n.Schema = {
         welcome: '欢迎登录',
         loginButton: '登录',
         rememberMe: '记住我',
-        ruoyiDemoHint: '若依演示账号：admin / admin123',
+        demoHint: '演示账号：admin / admin123',
         captchaPlaceholder: '请输入验证码',
         captchaRefresh: '刷新验证码',
         account: '账号',

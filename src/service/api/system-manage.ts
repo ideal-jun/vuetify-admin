@@ -3,7 +3,7 @@ import { request } from '../request';
 /**
  * Get the user list
  *
- * @param params The RuoYi query params
+ * @param params The backend query params
  */
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   return request<Api.SystemManage.UserList>({
@@ -15,7 +15,7 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
 /**
  * Get the role list
  *
- * @param params The RuoYi query params
+ * @param params The backend query params
  */
 export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
   return request<Api.SystemManage.RoleList>({
@@ -32,7 +32,7 @@ export function fetchGetAllRoles() {
 /**
  * Create a user
  *
- * @param data The RuoYi user payload
+ * @param data The backend user payload
  */
 export function fetchCreateUser(data: Api.SystemManage.CreateUser) {
   return request<null>({ url: '/system/user', method: 'POST', data });
@@ -41,7 +41,7 @@ export function fetchCreateUser(data: Api.SystemManage.CreateUser) {
 /**
  * Update a user
  *
- * @param data The RuoYi user payload, including the user id
+ * @param data The backend user payload, including the user id
  */
 export function fetchUpdateUser(data: Api.SystemManage.UpdateUser) {
   return request<null>({ url: '/system/user', method: 'PUT', data });
@@ -68,7 +68,7 @@ export function fetchBatchDeleteUser(ids: number[]) {
 /**
  * Create a role
  *
- * @param data The RuoYi role payload
+ * @param data The backend role payload
  */
 export function fetchCreateRole(data: Api.SystemManage.CreateRole) {
   return request<null>({ url: '/system/role', method: 'POST', data });
@@ -77,7 +77,7 @@ export function fetchCreateRole(data: Api.SystemManage.CreateRole) {
 /**
  * Update a role
  *
- * @param data The RuoYi role payload, including the role id
+ * @param data The backend role payload, including the role id
  */
 export function fetchUpdateRole(data: Api.SystemManage.UpdateRole) {
   return request<null>({ url: '/system/role', method: 'PUT', data });
@@ -103,13 +103,13 @@ export function fetchBatchDeleteRole(ids: number[]) {
 
 /** Get the flat menu list from GET /system/menu/list */
 export function fetchGetMenuList() {
-  return request<Api.RuoYi.Menu[]>({ url: '/system/menu/list' });
+  return request<Api.Backend.Menu[]>({ url: '/system/menu/list' });
 }
 
 /**
  * Create a menu
  *
- * @param data The RuoYi menu payload
+ * @param data The backend menu payload
  */
 export function fetchCreateMenu(data: Api.Menu.Create) {
   return request<null>({ url: '/system/menu', method: 'POST', data });
@@ -118,7 +118,7 @@ export function fetchCreateMenu(data: Api.Menu.Create) {
 /**
  * Update a menu
  *
- * @param data The RuoYi menu payload, including the menu id
+ * @param data The backend menu payload, including the menu id
  */
 export function fetchUpdateMenu(data: Api.Menu.Update) {
   return request<null>({ url: '/system/menu', method: 'PUT', data });
@@ -136,7 +136,7 @@ export function fetchDeleteMenu(menuId: number) {
 /**
  * Batch delete menus
  *
- * RuoYi only accepts one menu id per request, so the batch is sent one by one.
+ * backend only accepts one menu id per request, so the batch is sent one by one.
  *
  * @param ids The menu ids
  */

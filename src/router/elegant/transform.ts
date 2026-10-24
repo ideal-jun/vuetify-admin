@@ -141,7 +141,7 @@ function transformElegantRouteToVueRoute(
   }
 
   if (children?.length) {
-    // Keep nested directories nested (RuoYi routers may be three or more levels deep).
+    // Keep nested directories nested (backend routers may be three or more levels deep).
     vueRoute.children = children.flatMap((child) =>
       transformElegantRouteToVueRoute(child, layouts, views),
     );

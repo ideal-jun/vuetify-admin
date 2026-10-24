@@ -18,8 +18,8 @@ const ICON_MAP: Record<string, string> = {
   'mdi:keyboard-esc': 'mdi-keyboard-esc',
 };
 
-/** RuoYi uses Element icon names; map the common ones to the bundled MDI font */
-const RUOYI_ICON_MAP: Record<string, string> = {
+/** backend uses Element icon names; map the common ones to the bundled MDI font */
+const BACKEND_ICON_MAP: Record<string, string> = {
   build: 'mdi-hammer-wrench',
   code: 'mdi-code-tags',
   config: 'mdi-cog-outline',
@@ -47,16 +47,16 @@ const RUOYI_ICON_MAP: Record<string, string> = {
 };
 
 /**
- * Translate a RuoYi (Element) icon name to the bundled MDI font
+ * Translate a backend (Element) icon name to the bundled MDI font
  *
  * Plain MDI names are returned as-is, unknown names fall back to a neutral icon.
  */
-export function translateRuoYiIcon(icon?: string) {
+export function translateBackendIcon(icon?: string) {
   if (!icon) {
     return 'mdi-circle-small';
   }
 
-  return RUOYI_ICON_MAP[icon] ?? (icon.startsWith('mdi-') ? icon : 'mdi-circle-small');
+  return BACKEND_ICON_MAP[icon] ?? (icon.startsWith('mdi-') ? icon : 'mdi-circle-small');
 }
 
 /**

@@ -11,7 +11,7 @@ import { getColumnChecks } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { useMenuStore } from '@/store/modules/menu';
 import type { MenuTableRow } from '@/store/modules/menu';
-import { translateRuoYiIcon } from '@/utils/icon';
+import { translateBackendIcon } from '@/utils/icon';
 
 import MenuOperateDrawer from './modules/MenuOperateDrawer.vue';
 import MenuSearch from './modules/MenuSearch.vue';
@@ -67,7 +67,7 @@ const editingId = ref<number | null>(null);
 
 const addParentId = ref(0);
 
-const addDefaultType = ref<Api.RuoYi.MenuType>('C');
+const addDefaultType = ref<Api.Backend.MenuType>('C');
 
 const collapsedIds = ref<number[]>([]);
 
@@ -235,7 +235,7 @@ function toggleExpand(menuId: number) {
     : [...collapsedIds.value, menuId];
 }
 
-function openCreate(parentId = 0, type: Api.RuoYi.MenuType = 'C') {
+function openCreate(parentId = 0, type: Api.Backend.MenuType = 'C') {
   if (parentId) {
     collapsedIds.value = collapsedIds.value.filter((id) => id !== parentId);
   }
@@ -383,7 +383,7 @@ onMounted(() => {
             <VIcon
               v-if="item.icon"
               class="opacity-60"
-              :icon="translateRuoYiIcon(item.icon)"
+              :icon="translateBackendIcon(item.icon)"
               size="18"
             />
             <VIcon
@@ -430,7 +430,7 @@ onMounted(() => {
           <VIcon
             v-if="item.icon"
             class="opacity-70"
-            :icon="translateRuoYiIcon(item.icon)"
+            :icon="translateBackendIcon(item.icon)"
             size="18"
           />
           <span v-else class="opacity-40">—</span>

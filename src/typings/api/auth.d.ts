@@ -2,12 +2,12 @@ declare namespace Api {
   /**
    * namespace Auth
    *
-   * RuoYi auth responses are consumed directly.
+   * backend auth responses are consumed directly.
    */
   namespace Auth {
     /** The logged-in user information returned by GET /system/user/getInfo */
     interface UserInfo {
-      user: Api.RuoYi.User;
+      user: Api.Backend.User;
       roles: string[];
       permissions: string[];
     }
@@ -18,6 +18,6 @@ declare namespace Api {
       uuid: string;
     }
 
-    type Captcha = Api.RuoYi.Captcha;
+    type Captcha = Api.Backend.Captcha;
   }
 }

@@ -20,7 +20,7 @@ interface Props {
   /** The parent menu id when adding a child menu, 0 means the root level */
   parentId?: number;
   /** The default menu type when adding a menu */
-  defaultType?: Api.RuoYi.MenuType;
+  defaultType?: Api.Backend.MenuType;
 }
 
 interface MenuForm {
@@ -29,11 +29,11 @@ interface MenuForm {
   orderNum: number | string;
   path: string;
   component: string;
-  menuType: Api.RuoYi.MenuType;
+  menuType: Api.Backend.MenuType;
   perms: string;
   icon: string;
-  visible: Api.RuoYi.Visible;
-  status: Api.RuoYi.Status;
+  visible: Api.Backend.Visible;
+  status: Api.Backend.Status;
 }
 
 const props = defineProps<Props>();
@@ -137,7 +137,7 @@ const rules = computed(() => {
 function createDefaultModel(): MenuForm {
   const parentType = parentMenu.value?.menuType;
 
-  let menuType: Api.RuoYi.MenuType = 'M';
+  let menuType: Api.Backend.MenuType = 'M';
 
   if (props.defaultType) {
     menuType = props.defaultType;

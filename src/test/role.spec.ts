@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fetchCreateRole, fetchGetRoleList } from '@/service/api';
 import { setupTestAuth } from '@/test/auth';
-import roleListFixture from '@/test/fixtures/ruoyi/role-list.json';
+import roleListFixture from '@/test/fixtures/backend/role-list.json';
 import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/test/wait';
 import SystemRole from '@/views/system/role/index.vue';
 
@@ -62,7 +62,7 @@ function mountPage() {
 }
 
 describe('role management page', () => {
-  it('renders the RuoYi role table with role keys and sort fields', async () => {
+  it('renders the backend role table with role keys and sort fields', async () => {
     const wrapper = mountPage();
 
     await waitForText(wrapper, '第 1-2 条，共 2 条');

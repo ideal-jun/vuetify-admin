@@ -1,7 +1,7 @@
 import { setActivePinia } from 'pinia';
 
 import { useAuthStore } from '@/store/modules/auth';
-import getInfoFixture from '@/test/fixtures/ruoyi/get-info.json';
+import getInfoFixture from '@/test/fixtures/backend/get-info.json';
 import { localStg } from '@/utils/storage';
 
 import { pinia } from './setup';
@@ -13,7 +13,7 @@ interface TestAuthOptions {
   roles?: string[];
 }
 
-/** Prepare a signed-in RuoYi user for component tests that render permission-gated buttons */
+/** Prepare a signed-in backend user for component tests that render permission-gated buttons */
 export function setupTestAuth({
   permissions = ['*:*:*'],
   roles = ['admin'],
@@ -25,7 +25,7 @@ export function setupTestAuth({
   const authStore = useAuthStore();
 
   authStore.token = 'test-token';
-  authStore.userInfo.user = { ...(getInfoFixture.user as Api.RuoYi.User) };
+  authStore.userInfo.user = { ...(getInfoFixture.user as Api.Backend.User) };
   authStore.userInfo.roles = roles;
   authStore.userInfo.permissions = permissions;
 }

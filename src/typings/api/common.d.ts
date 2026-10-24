@@ -5,10 +5,10 @@
  */
 declare namespace Api {
   namespace Common {
-    /** RuoYi enable status: "0" enabled, "1" disabled */
-    type EnableStatus = Api.RuoYi.Status;
+    /** backend enable status: "0" enabled, "1" disabled */
+    type EnableStatus = Api.Backend.Status;
 
-    /** Common record shape returned by RuoYi tables */
+    /** Common record shape returned by backend tables */
     type CommonRecord<T = unknown> = {
       createBy?: string | null;
       createTime?: string | null;

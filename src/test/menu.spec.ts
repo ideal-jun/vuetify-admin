@@ -10,7 +10,7 @@ import {
 } from '@/service/api/system-manage';
 import { useMenuStore } from '@/store/modules/menu';
 import { setupTestAuth } from '@/test/auth';
-import menuListFixture from '@/test/fixtures/ruoyi/menu-list.json';
+import menuListFixture from '@/test/fixtures/backend/menu-list.json';
 import { pinia } from '@/test/setup';
 import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/test/wait';
 import SystemMenu from '@/views/system/menu/index.vue';
@@ -22,14 +22,14 @@ vi.mock('@/service/api/system-manage', () => ({
   fetchUpdateMenu: vi.fn(),
 }));
 
-const fixtureMenus = menuListFixture.data as unknown as Api.RuoYi.Menu[];
+const fixtureMenus = menuListFixture.data as unknown as Api.Backend.Menu[];
 
 const getMenuListMock = vi.mocked(fetchGetMenuList);
 const createMenuMock = vi.mocked(fetchCreateMenu);
 const updateMenuMock = vi.mocked(fetchUpdateMenu);
 const deleteMenuMock = vi.mocked(fetchDeleteMenu);
 
-let rows: Api.RuoYi.Menu[] = [];
+let rows: Api.Backend.Menu[] = [];
 let nextMenuId = 9000;
 
 beforeEach(async () => {
@@ -76,7 +76,7 @@ function mountPage() {
 }
 
 describe('menu management page', () => {
-  it('renders the flat RuoYi menu list as a tree table', async () => {
+  it('renders the flat backend menu list as a tree table', async () => {
     const wrapper = mountPage();
 
     await waitForText(wrapper, '系统管理');

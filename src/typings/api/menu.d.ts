@@ -2,10 +2,10 @@ declare namespace Api {
   /**
    * namespace Menu
    *
-   * The menu management module uses the RuoYi menu fields directly.
+   * The menu management module uses the backend menu fields directly.
    */
   namespace Menu {
-    type Record = Api.RuoYi.Menu;
+    type Record = Api.Backend.Menu;
 
     type Create = Omit<Record, 'menuId' | 'children' | 'createBy' | 'createTime'>;
 
@@ -14,7 +14,7 @@ declare namespace Api {
     /** The menu search model kept by the menu search panel */
     type SearchModel = {
       menuName: string | null;
-      status: Api.RuoYi.Status | null;
+      status: Api.Backend.Status | null;
     };
   }
 }

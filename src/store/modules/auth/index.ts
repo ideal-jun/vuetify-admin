@@ -15,7 +15,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const token = ref(getToken());
 
   const userInfo = reactive<Api.Auth.UserInfo>({
-    user: {} as Api.RuoYi.User,
+    user: {} as Api.Backend.User,
     roles: [],
     permissions: [],
   });
@@ -89,7 +89,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
     token.value = '';
     Object.assign(userInfo, {
-      user: {} as Api.RuoYi.User,
+      user: {} as Api.Backend.User,
       roles: [],
       permissions: [],
     });
@@ -111,7 +111,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   /** Persist the token, then load the user info before completing the login */
-  async function loginByToken(loginData: Api.RuoYi.LoginData) {
+  async function loginByToken(loginData: Api.Backend.LoginData) {
     // 1. Store the token in localStorage, later requests need it in the headers
     localStg.set('token', loginData.access_token);
 
@@ -142,7 +142,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   }
 
   /** Finish a successful login: persist the token, load user info and redirect */
-  async function completeLogin(loginData: Api.RuoYi.LoginData, redirect: boolean) {
+  async function completeLogin(loginData: Api.Backend.LoginData, redirect: boolean) {
     const pass = await loginByToken(loginData);
 
     if (!pass) {

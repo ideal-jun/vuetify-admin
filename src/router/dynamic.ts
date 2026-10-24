@@ -1,12 +1,12 @@
 import type { RouteMeta } from 'vue-router';
 
-import { translateRuoYiIcon } from '@/utils/icon';
+import { translateBackendIcon } from '@/utils/icon';
 
 import type { ElegantConstRoute, LastLevelRouteKey, RouteKey } from './route-key';
 
-type RuoYiRouter = Api.RuoYi.RouterRecord;
+type BackendRouter = Api.Backend.RouterRecord;
 
-/** The RuoYi component paths that have a matching view in this template */
+/** The backend component paths that have a matching view in this template */
 const COMPONENT_VIEWS: Record<string, { view: LastLevelRouteKey; name: RouteKey }> = {
   'system/menu/index': { view: 'system_menu', name: 'system_menu' },
   'system/role/index': { view: 'system_role', name: 'system_role' },
@@ -36,16 +36,16 @@ function createUniqueName(base: string, usedNames: Set<string>) {
   return name;
 }
 
-function isExternal(record: RuoYiRouter) {
+function isExternal(record: BackendRouter) {
   return Boolean(record.meta?.link) || /^https?:\/\//iu.test(record.path);
 }
 
-function createMeta(record: RuoYiRouter, order: number): RouteMeta {
+function createMeta(record: BackendRouter, order: number): RouteMeta {
   const meta = record.meta ?? {};
 
   return {
     title: meta.title || record.name,
-    icon: translateRuoYiIcon(meta.icon),
+    icon: translateBackendIcon(meta.icon),
     keepAlive: !meta.noCache,
     hideInMenu: Boolean(record.hidden),
     order,
@@ -54,7 +54,7 @@ function createMeta(record: RuoYiRouter, order: number): RouteMeta {
 }
 
 function transformRecord(
-  record: RuoYiRouter,
+  record: BackendRouter,
   order: number,
   isTopLevel: boolean,
   usedNames: Set<string>,
@@ -123,7 +123,7 @@ function transformRecord(
   }
 
   return {
-    name: createUniqueName(`ruoyi_${sanitizeName(record.name)}`, usedNames) as RouteKey,
+    name: createUniqueName(`backend_${sanitizeName(record.name)}`, usedNames) as RouteKey,
     path: record.path,
     component: 'view.unsupported',
     meta: createMeta(record, order),
@@ -131,13 +131,13 @@ function transformRecord(
 }
 
 /**
- * Transform the RuoYi `/system/menu/getRouters` tree into the elegant route declarations consumed by the route store.
+ * Transform the backend `/system/menu/getRouters` tree into the elegant route declarations consumed by the route store.
  *
- * Supported RuoYi component paths are mapped to the template views; the other pages are registered with the
+ * Supported backend component paths are mapped to the template views; the other pages are registered with the
  * "unsupported" placeholder so the backend menu is still rendered exactly as returned. External links become routes
  * with `meta.href` (the navigation guard opens them in a new tab).
  */
-export function transformRuoYiRouters(routers: RuoYiRouter[]): ElegantConstRoute[] {
+export function transformBackendRouters(routers: BackendRouter[]): ElegantConstRoute[] {
   const usedNames = new Set<string>();
   const usedPaths = new Set<string>();
 
