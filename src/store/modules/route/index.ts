@@ -6,11 +6,11 @@ import { SetupStoreId } from '@/enum';
 import { env } from '@/env';
 import { useBoolean } from '@/hooks/common/boolean';
 import { router, setupBuiltinRoutes } from '@/router';
-import { getRouteName, getRoutePath } from '@/router/route-key';
-import type { ElegantConstRoute, LastLevelRouteKey, RouteKey, RouteMap } from '@/router/route-key';
+import { getRouteName } from '@/router/route-key';
+import type { ElegantConstRoute, LastLevelRouteKey, RouteKey, RoutePath } from '@/router/route-key';
 import { createStaticRoutes, getAuthVueRoutes } from '@/router/routes';
-import { ROOT_ROUTE } from '@/router/routes/builtin';
-import { fetchGetConstantRoutes, fetchGetUserRoutes, fetchIsRouteExist } from '@/service/api';
+import { transformRuoYiRouters } from '@/router/ruoyi';
+import { fetchGetRouters } from '@/service/api';
 
 import { useAuthStore } from '../auth';
 import { useTabStore } from '../tab';
@@ -22,6 +22,7 @@ import {
   getGlobalMenusByAuthRoutes,
   getSelectedMenuKeyPathByKey,
   isRouteExistByRouteName,
+  isRouteExistByRoutePath,
   sortRoutesByOrder,
   transformMenuToSearchMenus,
   updateLocaleOfGlobalMenus,
@@ -41,11 +42,6 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /** Home route key */
   const routeHome = ref<LastLevelRouteKey>(env.routeHome);
-
-  /** Set the home route */
-  function setRouteHome(routeKey: LastLevelRouteKey) {
-    routeHome.value = routeKey;
-  }
 
   /** Constant routes */
   const constantRoutes = shallowRef<ElegantConstRoute[]>([]);
@@ -153,18 +149,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
     const staticRoute = createStaticRoutes();
 
-    if (authRouteMode.value === 'static') {
-      addConstantRoutes(staticRoute.constantRoutes);
-    } else {
-      const { data, error } = await fetchGetConstantRoutes();
-
-      if (error) {
-        // If fetching the constant routes fails, use the static constant routes
-        addConstantRoutes(staticRoute.constantRoutes);
-      } else {
-        addConstantRoutes(data);
-      }
-    }
+    addConstantRoutes(staticRoute.constantRoutes);
 
     handleConstantAndAuthRoutes();
 
@@ -176,7 +161,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   /** Init the auth route */
   async function initAuthRoute() {
     // Check if the user info is initialized
-    if (!authStore.userInfo.userId) {
+    if (!authStore.userInfo.user.userId) {
       await authStore.initUserInfo();
     }
 
@@ -211,21 +196,17 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   /** Init the dynamic auth route */
   async function initDynamicAuthRoute() {
-    const { data, error } = await fetchGetUserRoutes();
+    const { data, error } = await fetchGetRouters();
 
     if (error) {
-      // If fetching the user routes fails, reset the store
-      await authStore.resetStore();
+      // The request layer already resets the session on auth errors, reset only when still logged in.
+      if (authStore.isLogin) {
+        await authStore.resetStore();
+      }
     } else {
-      const { routes, home } = data;
-
-      addAuthRoutes(routes);
+      addAuthRoutes(transformRuoYiRouters(data));
 
       handleConstantAndAuthRoutes();
-
-      setRouteHome(home);
-
-      handleUpdateRootRouteRedirect(home);
 
       setIsInitAuthRoute(true);
     }
@@ -260,40 +241,20 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     removeRouteFns.push(fn);
   }
 
-  /** Update the root route redirect when the auth route mode is dynamic */
-  function handleUpdateRootRouteRedirect(redirectKey: LastLevelRouteKey) {
-    const redirect = getRoutePath(redirectKey);
-
-    if (redirect) {
-      const rootRoute: ElegantConstRoute = { ...ROOT_ROUTE, redirect };
-
-      router.removeRoute(rootRoute.name);
-
-      const [rootVueRoute] = getAuthVueRoutes([rootRoute]);
-
-      if (rootVueRoute) {
-        router.addRoute(rootVueRoute);
-      }
-    }
-  }
-
   /** Get whether the auth route exists */
-  async function getIsAuthRouteExist(routePath: RouteMap[RouteKey]) {
-    const routeName = getRouteName(routePath);
-
-    if (!routeName) {
-      return false;
-    }
+  async function getIsAuthRouteExist(routePath: string) {
+    const routeName = getRouteName(routePath as RoutePath);
 
     if (authRouteMode.value === 'static') {
       const { authRoutes: staticAuthRoutes } = createStaticRoutes();
 
-      return isRouteExistByRouteName(routeName, staticAuthRoutes);
+      return routeName
+        ? isRouteExistByRouteName(routeName, staticAuthRoutes)
+        : isRouteExistByRoutePath(routePath, staticAuthRoutes);
     }
 
-    const { data } = await fetchIsRouteExist(routeName);
-
-    return data;
+    // The RuoYi backend already filtered the router tree; check the registered auth routes locally.
+    return isRouteExistByRoutePath(routePath, authRoutes.value);
   }
 
   /** Get the selected menu key path */
@@ -312,7 +273,6 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   return {
     resetStore,
     routeHome,
-    setRouteHome,
     menus,
     searchMenus,
     updateGlobalMenusByLocale,

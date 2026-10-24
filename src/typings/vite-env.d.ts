@@ -51,14 +51,6 @@ declare namespace Env {
      * Use "," to separate multiple codes
      */
     readonly VITE_SERVICE_MODAL_LOGOUT_CODES: string;
-    /**
-     * Token expired codes of the backend service
-     *
-     * When the code is received, it will refresh the token and resend the request
-     *
-     * Use "," to separate multiple codes
-     */
-    readonly VITE_SERVICE_EXPIRED_TOKEN_CODES: string;
     /** When the route mode is static, the defined super role */
     readonly VITE_STATIC_SUPER_ROLE: string;
     /**
@@ -101,8 +93,8 @@ declare namespace Env {
     readonly VITE_STORAGE_PREFIX?: string;
     /** Whether to automatically detect updates after the application is packaged */
     readonly VITE_AUTOMATICALLY_DETECT_UPDATE?: CommonType.YesOrNo;
-    /** Whether to use the built-in mock service */
-    readonly VITE_SERVICE_MOCK: CommonType.YesOrNo;
+    /** Password used when creating a user from the frontend (RuoYi requires one) */
+    readonly VITE_DEFAULT_USER_PASSWORD?: string;
     /** Show proxy url log in terminal */
     readonly VITE_PROXY_LOG?: CommonType.YesOrNo;
   }

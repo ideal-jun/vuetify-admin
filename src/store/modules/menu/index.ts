@@ -2,107 +2,78 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import { SetupStoreId } from '@/enum';
+import {
+  fetchCreateMenu,
+  fetchDeleteMenu,
+  fetchGetMenuList,
+  fetchUpdateMenu,
+} from '@/service/api/system-manage';
 
-import { mockMenus } from './mock';
-
-export type MenuTableRow = Api.Menu.Record & {
+export type MenuTableRow = Api.RuoYi.Menu & {
   depth: number;
 };
 
-function cloneMenus(items: Api.Menu.Record[]): Api.Menu.Record[] {
-  return structuredClone(items);
-}
-
-function flattenMenus(items: Api.Menu.Record[], depth = 0): MenuTableRow[] {
-  return items.flatMap((item) => [
-    { ...item, depth },
-    ...(item.children ? flattenMenus(item.children, depth + 1) : []),
-  ]);
-}
-
-function insertMenu(
-  items: Api.Menu.Record[],
-  parentId: string | null,
-  menu: Api.Menu.Record,
-): boolean {
-  if (parentId === null) {
-    items.push(menu);
-
-    return true;
-  }
+/**
+ * Build the tree-ordered flat list from the RuoYi menu list
+ *
+ * RuoYi returns the flat rows ordered by parentId (all roots first, then every child, then the buttons), which is not
+ * suitable for a tree table. This walks every menu's children recursively, so each parent is immediately followed by
+ * its descendants, with siblings sorted by orderNum.
+ */
+function flattenMenus(items: Api.RuoYi.Menu[]): MenuTableRow[] {
+  const menuMap = new Map(items.map((item) => [item.menuId, item]));
+  const childrenMap = new Map<number, Api.RuoYi.Menu[]>();
 
   for (const item of items) {
-    if (item.id === parentId) {
-      item.children = [...(item.children ?? []), menu];
+    const parentId = menuMap.has(item.parentId) ? item.parentId : 0;
+    const children = childrenMap.get(parentId) ?? [];
 
-      return true;
-    }
-
-    if (item.children && insertMenu(item.children, parentId, menu)) {
-      return true;
-    }
+    children.push(item);
+    childrenMap.set(parentId, children);
   }
 
-  return false;
-}
+  for (const children of childrenMap.values()) {
+    children.sort(
+      (first, second) => first.orderNum - second.orderNum || first.menuId - second.menuId,
+    );
+  }
 
-function updateMenu(items: Api.Menu.Record[], id: string, input: Api.Menu.Update): boolean {
+  const rows: MenuTableRow[] = [];
+  const visited = new Set<number>();
+
+  const walk = (parentId: number, depth: number) => {
+    for (const item of childrenMap.get(parentId) ?? []) {
+      if (visited.has(item.menuId)) {
+        continue;
+      }
+
+      visited.add(item.menuId);
+      rows.push({ ...item, depth });
+      walk(item.menuId, depth + 1);
+    }
+  };
+
+  walk(0, 0);
+
+  // Safety net: append rows that are unreachable from the root (orphans or cyclic parentIds)
   for (const item of items) {
-    if (item.id === id) {
-      item.title = input.title;
-      item.path = input.path;
-      item.icon = input.icon;
-      item.permission = input.permission;
-      item.type = input.type;
-      item.sort = input.sort;
-      item.status = input.status;
-
-      return true;
-    }
-
-    if (item.children && updateMenu(item.children, id, input)) {
-      return true;
+    if (!visited.has(item.menuId)) {
+      rows.push({ ...item, depth: 0 });
+      walk(item.menuId, 1);
     }
   }
 
-  return false;
-}
-
-function removeMenu(items: Api.Menu.Record[], id: string): boolean {
-  const index = items.findIndex((item) => item.id === id);
-
-  if (index !== -1) {
-    items.splice(index, 1);
-
-    return true;
-  }
-
-  return items.some((item) => item.children && removeMenu(item.children, id));
-}
-
-function toggleMenuStatus(items: Api.Menu.Record[], id: string): boolean {
-  for (const item of items) {
-    if (item.id === id) {
-      item.status = item.status === 'enabled' ? 'disabled' : 'enabled';
-
-      return true;
-    }
-
-    if (item.children && toggleMenuStatus(item.children, id)) {
-      return true;
-    }
-  }
-
-  return false;
+  return rows;
 }
 
 export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
-  const menus = ref<Api.Menu.Record[]>([]);
+  const menus = ref<Api.RuoYi.Menu[]>([]);
   const isLoading = ref(false);
   const isLoaded = ref(false);
 
   const flatMenus = computed(() => flattenMenus(menus.value));
 
+  /** Load the flat menu rows from the RuoYi /system/menu/list endpoint */
   async function loadMenus() {
     if (isLoaded.value || isLoading.value) {
       return;
@@ -110,12 +81,10 @@ export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
 
     isLoading.value = true;
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 150);
-    });
+    const { data, error } = await fetchGetMenuList();
 
-    menus.value = cloneMenus(mockMenus);
-    isLoaded.value = true;
+    menus.value = error ? [] : data;
+    isLoaded.value = !error;
     isLoading.value = false;
   }
 
@@ -125,27 +94,76 @@ export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
     await loadMenus();
   }
 
-  function createMenu(input: Api.Menu.Create) {
-    const menu: Api.Menu.Record = {
-      ...input,
-      id: `menu-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  /** Create a menu, it returns whether the mutation succeeded */
+  async function createMenu(input: Api.Menu.Create) {
+    const { error } = await fetchCreateMenu(input);
+
+    if (!error) {
+      await reloadMenus();
+    }
+
+    return !error;
+  }
+
+  /** Update a menu, it returns whether the mutation succeeded */
+  async function updateMenu(input: Api.Menu.Update) {
+    const { error } = await fetchUpdateMenu(input);
+
+    if (!error) {
+      await reloadMenus();
+    }
+
+    return !error;
+  }
+
+  /** Remove a menu, it returns whether the mutation succeeded */
+  async function removeMenu(menuId: number) {
+    const { error } = await fetchDeleteMenu(menuId);
+
+    if (!error) {
+      await reloadMenus();
+    }
+
+    return !error;
+  }
+
+  /**
+   * Toggle the RuoYi menu status ("0" enabled, "1" disabled)
+   *
+   * RuoYi has no menu status endpoint, so the full menu payload is sent with the flipped status.
+   */
+  async function toggleStatus(menuId: number) {
+    const target = menus.value.find((item) => item.menuId === menuId);
+
+    if (!target) {
+      return false;
+    }
+
+    const input: Api.Menu.Update = {
+      menuId: target.menuId,
+      menuName: target.menuName,
+      parentId: target.parentId,
+      orderNum: target.orderNum,
+      path: target.path,
+      component: target.component,
+      query: target.query,
+      routeName: target.routeName,
+      isFrame: target.isFrame,
+      isCache: target.isCache,
+      menuType: target.menuType,
+      visible: target.visible,
+      status: target.status === '0' ? '1' : '0',
+      perms: target.perms,
+      icon: target.icon,
     };
 
-    if (!insertMenu(menus.value, input.parentId, menu)) {
-      menus.value.push(menu);
+    const { error } = await fetchUpdateMenu(input);
+
+    if (!error) {
+      await reloadMenus();
     }
-  }
 
-  function updateMenuById(id: string, input: Api.Menu.Update) {
-    updateMenu(menus.value, id, input);
-  }
-
-  function removeMenuById(id: string) {
-    removeMenu(menus.value, id);
-  }
-
-  function toggleStatus(id: string) {
-    toggleMenuStatus(menus.value, id);
+    return !error;
   }
 
   return {
@@ -156,8 +174,8 @@ export const useMenuStore = defineStore(SetupStoreId.Menu, () => {
     loadMenus,
     reloadMenus,
     createMenu,
-    updateMenu: updateMenuById,
-    removeMenu: removeMenuById,
+    updateMenu,
+    removeMenu,
     toggleStatus,
   };
 });

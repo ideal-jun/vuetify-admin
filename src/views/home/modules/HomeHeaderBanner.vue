@@ -12,7 +12,9 @@ const authStore = useAuthStore();
 const { routerPushByKey } = useRouterPush();
 
 const greeting = computed(() =>
-  $t('page.home.welcome', { userName: authStore.userInfo.userName || 'Admin' }),
+  $t('page.home.welcome', {
+    userName: authStore.userInfo.user.nickName || authStore.userInfo.user.userName || 'Admin',
+  }),
 );
 
 const dateText = computed(() => dayjs().format('YYYY-MM-DD dddd'));

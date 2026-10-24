@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSwitch from '@/components/common/AppSwitch.vue';
 import { $t } from '@/locales';
 import { useThemeStore } from '@/store/modules/theme';
 

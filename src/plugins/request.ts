@@ -7,8 +7,5 @@ export function setupRequest() {
     onUnauthorized: async () => {
       await useAuthStore().resetStore();
     },
-    onTokenExpired: async () => {
-      return useAuthStore().refreshToken();
-    },
   });
 }

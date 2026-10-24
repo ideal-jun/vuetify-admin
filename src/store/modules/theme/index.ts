@@ -77,9 +77,10 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
     if (watermark.enableUserName) {
       const { userInfo } = useAuthStore();
+      const userName = userInfo.user.nickName || userInfo.user.userName;
 
-      if (userInfo.userName) {
-        return userInfo.userName;
+      if (userName) {
+        return userName;
       }
     }
 
@@ -90,9 +91,19 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
     return watermark.text;
   });
 
-  /** Sync the Vuetify theme colors with the current theme settings */
+  /** Sync the Vuetify theme with the current theme settings */
   function syncVuetifyTheme() {
     const mode = darkMode.value ? 'dark' : 'light';
+    const radius = `${settings.value.themeRadius}px`;
+
+    // The radius is not theme specific, keep both themes ready for a scheme switch.
+    for (const themeName of ['light', 'dark'] as const) {
+      const theme = vuetify.theme.themes.value[themeName];
+
+      if (theme) {
+        theme.variables['border-radius-root'] = radius;
+      }
+    }
 
     const theme = vuetify.theme.themes.value[mode];
 
@@ -210,8 +221,6 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
    */
   function setThemeRadius(radius: number) {
     settings.value.themeRadius = radius;
-
-    document.documentElement.style.setProperty('--app-radius', `${radius}px`);
   }
 
   /**
@@ -298,10 +307,11 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
       { immediate: true },
     );
 
+    // The radius lives in the Vuetify theme variables, so the watcher re-syncs them.
     watch(
       () => settings.value.themeRadius,
-      (radius) => {
-        document.documentElement.style.setProperty('--app-radius', `${radius}px`);
+      () => {
+        syncVuetifyTheme();
       },
       { immediate: true },
     );

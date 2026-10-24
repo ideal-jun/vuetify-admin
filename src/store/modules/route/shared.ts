@@ -105,16 +105,32 @@ export function sortRoutesByOrder(routes: ElegantConstRoute[]) {
   return routes;
 }
 
+/**
+ * Resolve a route path against its parent path
+ *
+ * The static routes always declare absolute paths, while the RuoYi router tree uses relative paths for the children.
+ */
+export function resolveRoutePath(parentPath: string, routePath: string) {
+  if (routePath.startsWith('/')) {
+    return routePath;
+  }
+
+  const base = parentPath.replace(/\/+$/u, '');
+
+  return routePath ? `${base}/${routePath}` : base;
+}
+
 /** Get global menus by auth routes */
-export function getGlobalMenusByAuthRoutes(routes: ElegantConstRoute[]) {
+export function getGlobalMenusByAuthRoutes(routes: ElegantConstRoute[], parentPath = '') {
   const menus: App.Global.Menu[] = [];
 
   for (const route of routes) {
     if (!route.meta?.hideInMenu) {
-      const menu = getGlobalMenuByBaseRoute(route);
+      const routePath = resolveRoutePath(parentPath, route.path);
+      const menu = getGlobalMenuByBaseRoute(route, routePath);
 
       if (route.children?.some((child) => !child.meta?.hideInMenu)) {
-        menu.children = getGlobalMenusByAuthRoutes(route.children);
+        menu.children = getGlobalMenusByAuthRoutes(route.children, routePath);
       }
 
       menus.push(menu);
@@ -149,8 +165,11 @@ export function updateLocaleOfGlobalMenus(menus: App.Global.Menu[]) {
 }
 
 /** Get the global menu by base route */
-function getGlobalMenuByBaseRoute(route: RouteLocationNormalizedLoaded | ElegantConstRoute) {
-  const { name, path } = route;
+function getGlobalMenuByBaseRoute(
+  route: RouteLocationNormalizedLoaded | ElegantConstRoute,
+  routePath = route.path,
+) {
+  const { name } = route;
   const { title = '', i18nKey, icon = env.menuIcon } = route.meta ?? {};
 
   const label = i18nKey ? $t(i18nKey) : title;
@@ -160,7 +179,7 @@ function getGlobalMenuByBaseRoute(route: RouteLocationNormalizedLoaded | Elegant
     label,
     i18nKey,
     routeKey: name as RouteKey,
-    routePath: path as RouteMap[RouteKey],
+    routePath: routePath as RouteMap[RouteKey],
     icon,
   };
 
@@ -171,16 +190,19 @@ function getGlobalMenuByBaseRoute(route: RouteLocationNormalizedLoaded | Elegant
 export function getCacheRouteNames(routes: RouteRecordRaw[]) {
   const cacheNames: LastLevelRouteKey[] = [];
 
-  for (const route of routes) {
-    // Only get the last two level routes, which have components
-    if (route.children) {
-      for (const child of route.children) {
-        if (child.component && child.meta?.keepAlive) {
-          cacheNames.push(child.name as LastLevelRouteKey);
-        }
+  const collect = (items: RouteRecordRaw[]) => {
+    for (const route of items) {
+      if (route.component && route.meta?.keepAlive && route.name) {
+        cacheNames.push(route.name as LastLevelRouteKey);
+      }
+
+      if (route.children?.length) {
+        collect(route.children);
       }
     }
-  }
+  };
+
+  collect(routes);
 
   return cacheNames;
 }
@@ -200,6 +222,35 @@ function recursiveGetIsRouteExistByRouteName(
 
   if (route.children?.length) {
     return route.children.some((item) => recursiveGetIsRouteExistByRouteName(item, routeName));
+  }
+
+  return false;
+}
+
+/**
+ * Whether the route exists by route path
+ *
+ * It is the fallback for the routes declared by the backend, whose name is not in the static route map.
+ */
+export function isRouteExistByRoutePath(routePath: string, routes: ElegantConstRoute[]) {
+  return routes.some((route) => recursiveGetIsRouteExistByRoutePath(route, '', routePath));
+}
+
+function recursiveGetIsRouteExistByRoutePath(
+  route: ElegantConstRoute,
+  parentPath: string,
+  routePath: string,
+): boolean {
+  const fullPath = resolveRoutePath(parentPath, route.path);
+
+  if (fullPath === routePath) {
+    return true;
+  }
+
+  if (route.children?.length) {
+    return route.children.some((item) =>
+      recursiveGetIsRouteExistByRoutePath(item, fullPath, routePath),
+    );
   }
 
   return false;

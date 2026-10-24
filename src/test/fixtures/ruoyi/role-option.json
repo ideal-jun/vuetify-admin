@@ -1,0 +1,16 @@
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": [
+    {
+      "roleId": 1,
+      "roleName": "超级管理员",
+      "roleKey": "admin"
+    },
+    {
+      "roleId": 2,
+      "roleName": "普通角色",
+      "roleKey": "common"
+    }
+  ]
+}

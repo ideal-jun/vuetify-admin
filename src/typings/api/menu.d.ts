@@ -2,35 +2,19 @@ declare namespace Api {
   /**
    * namespace Menu
    *
-   * The business menu management module, not the router menu.
+   * The menu management module uses the RuoYi menu fields directly.
    */
   namespace Menu {
-    type Record = {
-      id: string;
-      parentId: string | null;
-      title: string;
-      path: string;
-      icon: string;
-      /** the permission identifier, required for button menus */
-      permission: string;
-      type: UnionKey.MenuType;
-      sort: number;
-      status: UnionKey.MenuStatus;
-      children?: Record[];
-    };
+    type Record = Api.RuoYi.Menu;
 
-    type Create = Omit<Record, 'children' | 'id'>;
+    type Create = Omit<Record, 'menuId' | 'children' | 'createBy' | 'createTime'>;
 
-    type Update = Create;
+    type Update = Create & Pick<Record, 'menuId'>;
 
-    /** the menu search model kept by the menu search panel */
+    /** The menu search model kept by the menu search panel */
     type SearchModel = {
-      /** menu title */
-      title: string | null;
-      /** route path */
-      path: string | null;
-      /** menu status */
-      status: UnionKey.MenuStatus | null;
+      menuName: string | null;
+      status: Api.RuoYi.Status | null;
     };
   }
 }

@@ -1,9 +1,58 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchCreateRole, fetchGetRoleList } from '@/service/api';
 import { setupTestAuth } from '@/test/auth';
+import roleListFixture from '@/test/fixtures/ruoyi/role-list.json';
+import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/test/wait';
 import SystemRole from '@/views/system/role/index.vue';
+
+vi.mock('@/service/api', () => ({
+  fetchBatchDeleteRole: vi.fn(),
+  fetchCreateRole: vi.fn(),
+  fetchDeleteRole: vi.fn(),
+  fetchGetRoleList: vi.fn(),
+  fetchUpdateRole: vi.fn(),
+}));
+
+const fixtureRoles = roleListFixture.rows as unknown as Api.SystemManage.Role[];
+
+const getRoleListMock = vi.mocked(fetchGetRoleList);
+const createRoleMock = vi.mocked(fetchCreateRole);
+
+let roles: Api.SystemManage.Role[] = [];
+
+beforeEach(() => {
+  setupTestAuth();
+
+  roles = fixtureRoles.map((role) => structuredClone(role));
+
+  getRoleListMock.mockImplementation(async () => ({
+    data: {
+      code: 200,
+      msg: '查询成功',
+      total: roles.length,
+      rows: structuredClone(roles),
+    },
+    error: null,
+  }));
+
+  createRoleMock.mockImplementation(async (payload) => {
+    roles = [
+      ...roles,
+      {
+        roleId: 9000 + roles.length,
+        roleName: payload.roleName,
+        roleKey: payload.roleKey,
+        roleSort: payload.roleSort ?? roles.length + 1,
+        status: payload.status ?? '0',
+        remark: payload.remark ?? '',
+      },
+    ];
+
+    return { data: null, error: null };
+  });
+});
 
 function mountPage() {
   return mount({
@@ -12,27 +61,17 @@ function mountPage() {
   });
 }
 
-async function waitForMock() {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 700);
-  });
-  await flushPromises();
-}
-
 describe('role management page', () => {
-  beforeEach(() => {
-    setupTestAuth();
-  });
-
-  it('renders the search panel and the role table', async () => {
+  it('renders the RuoYi role table with role keys and sort fields', async () => {
     const wrapper = mountPage();
 
-    await waitForMock();
+    await waitForText(wrapper, '第 1-2 条，共 2 条');
 
     expect(wrapper.text()).toContain('角色列表');
-    expect(wrapper.text()).toContain('第 1-4 条，共 4 条');
-    expect(wrapper.text()).toContain('Super Admin');
-    expect(wrapper.findAll('tbody tr')).toHaveLength(4);
+    expect(wrapper.text()).toContain('超级管理员');
+    expect(wrapper.text()).toContain('admin');
+    expect(wrapper.text()).toContain('common');
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2);
 
     wrapper.unmount();
   });
@@ -40,35 +79,31 @@ describe('role management page', () => {
   it('creates a role from the operate drawer', async () => {
     const wrapper = mountPage();
 
-    await waitForMock();
+    await waitForTableRows(wrapper, 2);
 
-    const addButton = wrapper.findAll('button').find((button) => button.text().trim() === '新增');
+    const addButton = await waitForButton(wrapper, '新增');
 
-    expect(addButton).toBeDefined();
+    await addButton.trigger('click');
 
-    await addButton?.trigger('click');
-    await nextTick();
-
-    const drawer = wrapper
-      .findAll('.v-navigation-drawer')
-      .find((item) => item.text().includes('新增角色'));
-
-    if (!drawer) {
-      throw new Error('the role drawer is not rendered');
-    }
+    const drawer = await waitForDrawer(wrapper, '新增角色');
 
     await drawer.find('input[placeholder="请输入角色名称"]').setValue('Auditor');
-    await drawer.find('input[placeholder="如 R_ADMIN"]').setValue('R_AUDITOR');
+    await drawer.find('input[placeholder="如 common"]').setValue('auditor');
 
     const confirmButton = drawer
       .findAll('button')
       .find((button) => button.text().trim() === '确认');
 
-    await confirmButton?.trigger('click');
-    await waitForMock();
+    expect(confirmButton).toBeDefined();
 
-    expect(wrapper.text()).toContain('第 1-5 条，共 5 条');
+    await confirmButton?.trigger('click');
+
+    await waitForText(wrapper, '第 1-3 条，共 3 条');
+
     expect(wrapper.text()).toContain('Auditor');
+    expect(createRoleMock).toHaveBeenCalledWith(
+      expect.objectContaining({ roleName: 'Auditor', roleKey: 'auditor', status: '0' }),
+    );
 
     wrapper.unmount();
   });

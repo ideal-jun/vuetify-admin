@@ -41,9 +41,10 @@ export function getServiceBaseURL(isProxy: boolean) {
  * @param key If not set, the default key is used
  */
 function createProxyPattern(key?: App.Service.OtherBaseURLKey) {
-  if (!key) {
-    return '/proxy-default';
+  if (key) {
+    return `/proxy-${key}`;
   }
 
-  return `/proxy-${key}`;
+  // In development the default service base URL doubles as the Vite proxy prefix (see vite.config.mts).
+  return env.serviceBaseURL.startsWith('/') ? env.serviceBaseURL : '/proxy-default';
 }

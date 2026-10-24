@@ -2,11 +2,13 @@
 import { computed, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 
+import { enableStatusOptions, menuTypeOptions, menuVisibleOptions } from '@/constants/business';
 import { REG_PERMISSION_CODE } from '@/constants/reg';
 import { useFormRules, useVuetifyForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import { useMenuStore } from '@/store/modules/menu';
 import type { MenuTableRow } from '@/store/modules/menu';
+import { translateOptions } from '@/utils/common';
 
 defineOptions({ name: 'MenuOperateDrawer' });
 
@@ -15,21 +17,23 @@ interface Props {
   operateType: 'add' | 'edit';
   /** The editing row data */
   rowData?: MenuTableRow | null;
-  /** The default parent id when adding a child menu */
-  parentId?: string;
-  /** The default type when adding a menu */
-  defaultType?: UnionKey.MenuType;
+  /** The parent menu id when adding a child menu, 0 means the root level */
+  parentId?: number;
+  /** The default menu type when adding a menu */
+  defaultType?: Api.RuoYi.MenuType;
 }
 
 interface MenuForm {
-  title: string;
+  menuName: string;
+  parentId: number;
+  orderNum: number | string;
   path: string;
+  component: string;
+  menuType: Api.RuoYi.MenuType;
+  perms: string;
   icon: string;
-  permission: string;
-  type: UnionKey.MenuType;
-  parentId: string;
-  sort: string;
-  status: UnionKey.MenuStatus;
+  visible: Api.RuoYi.Visible;
+  status: Api.RuoYi.Status;
 }
 
 const props = defineProps<Props>();
@@ -46,41 +50,41 @@ const { mobile } = useDisplay();
 
 const { formRef, validate, resetValidation } = useVuetifyForm();
 
+const submitting = ref(false);
+
 const title = computed(() => {
   if (props.operateType === 'edit') {
     return $t('page.system.menu.edit');
   }
 
-  return props.defaultType === 'button'
-    ? $t('page.system.menu.addButton')
-    : $t('page.system.menu.add');
+  return props.defaultType === 'F' ? $t('page.system.menu.addButton') : $t('page.system.menu.add');
 });
 
-const allTypeOptions = computed<CommonType.Option<UnionKey.MenuType>[]>(() => [
-  { label: $t('page.system.menu.type.directory'), value: 'directory' },
-  { label: $t('page.system.menu.type.menu'), value: 'menu' },
-  { label: $t('page.system.menu.type.button'), value: 'button' },
-]);
-
 const parentMenu = computed(
-  () => menuStore.flatMenus.find((item) => item.id === props.parentId) ?? null,
+  () => menuStore.flatMenus.find((item) => item.menuId === props.parentId) ?? null,
 );
 
 const typeOptions = computed(() => {
+  const options = translateOptions(menuTypeOptions);
+
   if (props.operateType === 'edit') {
-    return allTypeOptions.value;
+    return options;
   }
 
-  if (parentMenu.value?.type === 'directory') {
-    return allTypeOptions.value.filter((item) => item.value === 'menu');
+  if (parentMenu.value?.menuType === 'M') {
+    return options.filter((item) => item.value === 'C');
   }
 
-  if (parentMenu.value?.type === 'menu') {
-    return allTypeOptions.value.filter((item) => item.value === 'button');
+  if (parentMenu.value?.menuType === 'C') {
+    return options.filter((item) => item.value === 'F');
   }
 
-  return allTypeOptions.value.filter((item) => item.value !== 'button');
+  return options.filter((item) => item.value !== 'F');
 });
+
+const statusOptions = computed(() => translateOptions(enableStatusOptions));
+
+const visibleOptions = computed(() => translateOptions(menuVisibleOptions));
 
 const parentDisabled = computed(() => props.operateType === 'edit' || Boolean(props.parentId));
 
@@ -88,89 +92,100 @@ const typeDisabled = computed(() => props.operateType === 'edit' || Boolean(prop
 
 const model = ref<MenuForm>(createDefaultModel());
 
-const statusOptions = computed<CommonType.Option<UnionKey.MenuStatus>[]>(() => [
-  { label: $t('page.system.menu.status.enabled'), value: 'enabled' },
-  { label: $t('page.system.menu.status.disabled'), value: 'disabled' },
-]);
-
-const parentOptions = computed<CommonType.Option<string>[]>(() => {
-  const createOption = (item: MenuTableRow): CommonType.Option<string> => ({
-    label: `${'— '.repeat(item.depth)}${item.title}`,
-    value: item.id,
+const parentOptions = computed<CommonType.Option<number>[]>(() => {
+  const createOption = (item: MenuTableRow): CommonType.Option<number> => ({
+    label: `${'— '.repeat(item.depth)}${item.menuName}`,
+    value: item.menuId,
   });
 
-  const rootOption: CommonType.Option<string> = {
+  const rootOption: CommonType.Option<number> = {
     label: $t('page.system.menu.rootParent'),
-    value: '',
+    value: 0,
   };
 
-  if (model.value.type === 'button') {
+  if (model.value.menuType === 'F') {
     return menuStore.flatMenus
-      .filter((item) => item.type === 'menu')
+      .filter((item) => item.menuType === 'C')
       .map((item) => createOption(item));
   }
 
-  if (model.value.type === 'menu') {
-    return [
-      rootOption,
-      ...menuStore.flatMenus
-        .filter((item) => item.type === 'directory')
-        .map((item) => createOption(item)),
-    ];
-  }
-
-  return [rootOption];
+  return [
+    rootOption,
+    ...menuStore.flatMenus
+      .filter((item) => item.menuType === 'M')
+      .map((item) => createOption(item)),
+  ];
 });
 
 const rules = computed(() => {
   const { createPatternRule, createRequiredRule } = useFormRules();
+  const required = createRequiredRule($t('form.required'));
 
   return {
-    title: createRequiredRule($t('form.required')),
-    path: createRequiredRule($t('form.required')),
-    permission: [
-      createRequiredRule($t('page.system.menu.permission.required')),
-      createPatternRule(REG_PERMISSION_CODE, $t('page.system.menu.permission.invalid')),
-    ],
+    menuName: [required],
+    path: model.value.menuType === 'F' ? [] : [required],
+    perms:
+      model.value.menuType === 'F'
+        ? [
+            createRequiredRule($t('page.system.menu.permission.required')),
+            createPatternRule(REG_PERMISSION_CODE, $t('page.system.menu.permission.invalid')),
+          ]
+        : [],
   };
 });
 
 function createDefaultModel(): MenuForm {
-  const type = props.defaultType ?? (parentMenu.value?.type === 'menu' ? 'button' : 'menu');
+  const parentType = parentMenu.value?.menuType;
+
+  let menuType: Api.RuoYi.MenuType = 'M';
+
+  if (props.defaultType) {
+    menuType = props.defaultType;
+  } else if (parentType === 'M') {
+    menuType = 'C';
+  } else if (parentType === 'C') {
+    menuType = 'F';
+  }
 
   return {
-    title: '',
+    menuName: '',
+    parentId: props.parentId ?? 0,
+    orderNum: menuStore.flatMenus.length + 1,
     path: '',
+    component: '',
+    menuType,
+    perms: '',
     icon: '',
-    permission: '',
-    type,
-    parentId: props.parentId ?? '',
-    sort: String(menuStore.flatMenus.length + 1),
-    status: 'enabled',
+    visible: '0',
+    status: '0',
   };
 }
 
 function initModel() {
   if (props.operateType === 'edit' && props.rowData) {
     const {
-      title: menuTitle,
-      path,
-      icon,
-      permission,
-      type,
+      menuName,
       parentId,
-      sort,
+      orderNum,
+      path,
+      component,
+      menuType,
+      perms,
+      icon,
+      visible,
       status,
     } = props.rowData;
 
     model.value = {
-      title: menuTitle,
-      path,
-      icon,
-      permission,
-      type,
-      parentId: parentId ?? '',
-      sort: String(sort),
+      menuName,
+      parentId,
+      orderNum,
+      path: path ?? '',
+      component: component ?? '',
+      menuType,
+      perms: perms ?? '',
+      icon: icon ?? '',
+      visible,
       status,
     };
 
@@ -191,50 +206,76 @@ async function handleSubmit() {
     return;
   }
 
-  const isButton = model.value.type === 'button';
+  submitting.value = true;
+
+  try {
+    await submitMenu();
+
+    closeDrawer();
+    emit('submitted');
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function submitMenu() {
+  const isButton = model.value.menuType === 'F';
+  const isMenu = model.value.menuType === 'C';
 
   const payload: Api.Menu.Create = {
-    title: model.value.title.trim(),
-    path: isButton ? '' : model.value.path.trim(),
-    icon: isButton ? '' : model.value.icon.trim(),
-    permission: isButton ? model.value.permission.trim() : '',
-    type: model.value.type,
-    parentId: model.value.parentId || null,
-    sort: Number(model.value.sort) || 0,
+    menuName: model.value.menuName.trim(),
+    parentId: Number(model.value.parentId) || 0,
+    orderNum: Number(model.value.orderNum) || 0,
+    menuType: model.value.menuType,
+    visible: model.value.visible,
     status: model.value.status,
+    path: isButton ? '' : model.value.path.trim(),
+    component: isMenu ? model.value.component.trim() : '',
+    perms: model.value.perms.trim(),
+    icon: isButton ? '' : model.value.icon.trim(),
   };
 
   if (props.operateType === 'edit' && props.rowData) {
-    menuStore.updateMenu(props.rowData.id, payload);
+    const success = await menuStore.updateMenu({
+      ...payload,
+      menuId: props.rowData.menuId,
+    });
+
+    if (!success) {
+      return;
+    }
+
     window.$message?.success($t('common.updateSuccess'));
   } else {
-    menuStore.createMenu(payload);
+    const success = await menuStore.createMenu(payload);
+
+    if (!success) {
+      return;
+    }
+
     window.$message?.success($t('common.addSuccess'));
   }
-
-  closeDrawer();
-  emit('submitted');
 }
 
 watch(
-  () => model.value.type,
-  (type) => {
+  () => model.value.menuType,
+  (menuType) => {
     if (props.operateType === 'edit') {
       return;
     }
 
-    const parent = menuStore.flatMenus.find((item) => item.id === model.value.parentId);
+    const parent = menuStore.flatMenus.find((item) => item.menuId === model.value.parentId);
 
-    let parentValid = !parent;
+    if (menuType === 'F') {
+      if (parent?.menuType !== 'C') {
+        model.value.parentId = 0;
+      }
 
-    if (type === 'menu') {
-      parentValid = !parent || parent.type === 'directory';
-    } else if (type === 'button') {
-      parentValid = parent?.type === 'menu';
+      return;
     }
 
-    if (!parentValid) {
-      model.value.parentId = '';
+    if (parent && parent.menuType !== 'M') {
+      model.value.parentId = 0;
     }
   },
 );
@@ -268,6 +309,7 @@ watch(visible, (value) => {
 
         <VBtn
           :aria-label="$t('common.close')"
+          :disabled="submitting"
           icon="mdi-close"
           size="small"
           variant="text"
@@ -281,49 +323,21 @@ watch(visible, (value) => {
         <VForm ref="formRef" :model="model" @submit.prevent="handleSubmit">
           <div class="flex flex-col gap-4">
             <VTextField
-              v-model="model.title"
-              :label="$t('page.system.menu.form.title')"
-              :placeholder="$t('page.system.menu.placeholder.title')"
+              v-model="model.menuName"
+              :label="$t('page.system.menu.form.menuName')"
+              :placeholder="$t('page.system.menu.placeholder.menuName')"
               prepend-inner-icon="mdi-menu"
               required
-              :rules="[rules.title]"
-            />
-
-            <VTextField
-              v-if="model.type === 'button'"
-              v-model="model.permission"
-              :label="$t('page.system.menu.form.permission')"
-              :placeholder="$t('page.system.menu.placeholder.permission')"
-              prepend-inner-icon="mdi-key-outline"
-              required
-              :rules="rules.permission"
-            />
-
-            <VTextField
-              v-if="model.type !== 'button'"
-              v-model="model.path"
-              :label="$t('page.system.menu.form.path')"
-              :placeholder="$t('page.system.menu.placeholder.path')"
-              prepend-inner-icon="mdi-routes"
-              required
-              :rules="[rules.path]"
-            />
-
-            <VTextField
-              v-if="model.type !== 'button'"
-              v-model="model.icon"
-              :label="$t('page.system.menu.form.icon')"
-              :placeholder="$t('page.system.menu.placeholder.icon')"
-              prepend-inner-icon="mdi-emoticon-outline"
+              :rules="rules.menuName"
             />
 
             <VSelect
-              v-model="model.type"
+              v-model="model.menuType"
               :disabled="typeDisabled"
               item-title="label"
               item-value="value"
               :items="typeOptions"
-              :label="$t('page.system.menu.form.type')"
+              :label="$t('page.system.menu.form.menuType')"
               prepend-inner-icon="mdi-file-tree-outline"
             />
 
@@ -333,21 +347,64 @@ watch(visible, (value) => {
               item-title="label"
               item-value="value"
               :items="parentOptions"
-              :label="$t('page.system.menu.form.parent')"
+              :label="$t('page.system.menu.form.parentId')"
               prepend-inner-icon="mdi-folder-outline"
             />
 
             <VTextField
-              v-model="model.sort"
-              :label="$t('page.system.menu.form.sort')"
-              :placeholder="$t('page.system.menu.placeholder.sort')"
+              v-model.number="model.orderNum"
+              :label="$t('page.system.menu.form.orderNum')"
+              :placeholder="$t('page.system.menu.placeholder.orderNum')"
               prepend-inner-icon="mdi-sort-numeric-ascending"
               type="number"
             />
 
+            <VTextField
+              v-if="model.menuType !== 'F'"
+              v-model="model.path"
+              :label="$t('page.system.menu.form.path')"
+              :placeholder="$t('page.system.menu.placeholder.path')"
+              prepend-inner-icon="mdi-routes"
+              required
+              :rules="rules.path"
+            />
+
+            <VTextField
+              v-if="model.menuType === 'C'"
+              v-model="model.component"
+              :label="$t('page.system.menu.form.component')"
+              :placeholder="$t('page.system.menu.placeholder.component')"
+              prepend-inner-icon="mdi-puzzle-outline"
+            />
+
+            <VTextField
+              v-model="model.perms"
+              :label="$t('page.system.menu.form.perms')"
+              :placeholder="$t('page.system.menu.placeholder.perms')"
+              prepend-inner-icon="mdi-key-outline"
+              :rules="rules.perms"
+            />
+
+            <VTextField
+              v-if="model.menuType !== 'F'"
+              v-model="model.icon"
+              :label="$t('page.system.menu.form.icon')"
+              :placeholder="$t('page.system.menu.placeholder.icon')"
+              prepend-inner-icon="mdi-emoticon-outline"
+            />
+
+            <VSelect
+              v-model="model.visible"
+              item-title="label"
+              item-value="value"
+              :items="visibleOptions"
+              :label="$t('page.system.menu.form.visible')"
+              prepend-inner-icon="mdi-eye-outline"
+            />
+
             <div>
               <div class="mb-1.5 text-sm opacity-80">
-                {{ $t('page.system.menu.columns.status') }}
+                {{ $t('page.system.menu.form.status') }}
               </div>
 
               <VRadioGroup v-model="model.status" hide-details inline>
@@ -366,8 +423,12 @@ watch(visible, (value) => {
       <VDivider />
 
       <div class="flex justify-end gap-2 px-5 py-4">
-        <VBtn variant="text" @click="closeDrawer">{{ $t('common.cancel') }}</VBtn>
-        <VBtn color="primary" @click="handleSubmit">{{ $t('common.confirm') }}</VBtn>
+        <VBtn :disabled="submitting" variant="text" @click="closeDrawer">
+          {{ $t('common.cancel') }}
+        </VBtn>
+        <VBtn color="primary" :disabled="submitting" :loading="submitting" @click="handleSubmit">
+          {{ $t('common.confirm') }}
+        </VBtn>
       </div>
     </div>
   </VNavigationDrawer>

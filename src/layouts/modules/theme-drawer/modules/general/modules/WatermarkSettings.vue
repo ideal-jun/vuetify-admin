@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import AppSwitch from '@/components/common/AppSwitch.vue';
 import { watermarkTimeFormatOptions } from '@/constants/app';
 import { $t } from '@/locales';
 import { useThemeStore } from '@/store/modules/theme';

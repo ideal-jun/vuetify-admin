@@ -16,15 +16,7 @@ import RoleSearch from './modules/RoleSearch.vue';
 
 defineOptions({ name: 'SystemRole' });
 
-type RoleColumnKey =
-  | 'index'
-  | 'roleName'
-  | 'roleCode'
-  | 'roleDesc'
-  | 'users'
-  | 'status'
-  | 'createTime'
-  | 'actions';
+type RoleColumnKey = 'roleName' | 'roleKey' | 'roleSort' | 'status' | 'createTime' | 'actions';
 
 interface RoleTableHeader {
   key: RoleColumnKey;
@@ -33,11 +25,7 @@ interface RoleTableHeader {
   minWidth?: number | string;
   align?: 'start' | 'center' | 'end';
   sortable?: boolean;
-}
-
-interface TableSortItem {
-  key: string;
-  order?: 'asc' | 'desc';
+  fixed?: boolean | 'start' | 'end';
 }
 
 const pageSizeOptions = [10, 20, 50];
@@ -45,7 +33,7 @@ const pageSizeOptions = [10, 20, 50];
 function createDefaultSearchModel(): Api.SystemManage.RoleSearchModel {
   return {
     roleName: null,
-    roleCode: null,
+    roleKey: null,
     status: null,
   };
 }
@@ -55,7 +43,6 @@ const searchParams = ref<Api.SystemManage.RoleSearchModel>(createDefaultSearchMo
 const tableOptions = reactive({
   page: 1,
   itemsPerPage: 10,
-  sortBy: [] as TableSortItem[],
 });
 
 const data = ref<Api.SystemManage.Role[]>([]);
@@ -67,16 +54,13 @@ let requestSequence = 0;
 
 async function loadRoles() {
   const sequence = ++requestSequence;
-  const sort = tableOptions.sortBy[0];
 
   loading.value = true;
 
   const { data: roleList, error } = await fetchGetRoleList({
     ...searchParams.value,
-    current: tableOptions.page,
-    size: tableOptions.itemsPerPage,
-    sortBy: sort?.key ?? null,
-    sortOrder: sort?.order ?? null,
+    pageNum: tableOptions.page,
+    pageSize: tableOptions.itemsPerPage,
   });
 
   if (sequence !== requestSequence) {
@@ -92,7 +76,7 @@ async function loadRoles() {
     return;
   }
 
-  data.value = roleList.records;
+  data.value = roleList.rows;
   total.value = roleList.total;
 }
 
@@ -103,47 +87,40 @@ const canEdit = computed(() => hasAuth(permissionCodes.roleEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.roleDelete));
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.Role, number>(data, 'id', loadRoles);
+  useTableOperate<Api.SystemManage.Role, number>(data, 'roleId', loadRoles);
 
 const baseHeaders = computed<RoleTableHeader[]>(() => [
-  { key: 'index', title: $t('common.index'), width: 64, align: 'center', sortable: false },
   {
     key: 'roleName',
     title: $t('page.system.role.columns.roleName'),
     minWidth: 170,
-    sortable: true,
-  },
-  {
-    key: 'roleCode',
-    title: $t('page.system.role.columns.roleCode'),
-    width: 160,
-    sortable: true,
-  },
-  {
-    key: 'roleDesc',
-    title: $t('page.system.role.columns.roleDesc'),
-    minWidth: 240,
     sortable: false,
   },
   {
-    key: 'users',
-    title: $t('page.system.role.columns.users'),
-    width: 100,
+    key: 'roleKey',
+    title: $t('page.system.role.columns.roleKey'),
+    minWidth: 160,
+    sortable: false,
+  },
+  {
+    key: 'roleSort',
+    title: $t('page.system.role.columns.roleSort'),
+    width: 90,
     align: 'center',
-    sortable: true,
+    sortable: false,
   },
   {
     key: 'status',
     title: $t('page.system.role.columns.status'),
     width: 100,
     align: 'center',
-    sortable: true,
+    sortable: false,
   },
   {
     key: 'createTime',
     title: $t('page.system.role.columns.createTime'),
     width: 170,
-    sortable: true,
+    sortable: false,
   },
   {
     key: 'actions',
@@ -151,6 +128,7 @@ const baseHeaders = computed<RoleTableHeader[]>(() => [
     width: 120,
     align: 'center',
     sortable: false,
+    fixed: 'end',
   },
 ]);
 
@@ -174,12 +152,12 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
 }
 
 watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, tableOptions.sortBy, refreshKey.value],
+  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
   () => {
     checkedRowKeys.value = [];
     void loadRoles();
   },
-  { deep: true, immediate: true },
+  { immediate: true },
 );
 
 function handleSearch() {
@@ -214,7 +192,7 @@ function handleDelete(role: Api.SystemManage.Role) {
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
     onPositiveClick: async () => {
-      const { error } = await fetchDeleteRole(role.id);
+      const { error } = await fetchDeleteRole(role.roleId);
 
       if (error) {
         return;
@@ -285,7 +263,6 @@ function handleBatchDelete() {
         v-model="checkedRowKeys"
         v-model:items-per-page="tableOptions.itemsPerPage"
         v-model:page="tableOptions.page"
-        v-model:sort-by="tableOptions.sortBy"
         class="min-h-0 flex-1"
         density="comfortable"
         fixed-header
@@ -293,7 +270,7 @@ function handleBatchDelete() {
         :height="tableHeight"
         :hide-default-footer="total === 0"
         hover
-        item-value="id"
+        item-value="roleId"
         :items="data"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
@@ -303,10 +280,6 @@ function handleBatchDelete() {
         show-current-page
         show-select
       >
-        <template #item.index="{ index }">
-          {{ (tableOptions.page - 1) * tableOptions.itemsPerPage + index + 1 }}
-        </template>
-
         <template #item.roleName="{ item }">
           <div class="flex items-center gap-2.5">
             <VAvatar color="primary" size="32" variant="tonal">
@@ -316,26 +289,18 @@ function handleBatchDelete() {
           </div>
         </template>
 
-        <template #item.roleCode="{ item }">
-          <VCode class="text-xs">{{ item.roleCode }}</VCode>
+        <template #item.roleKey="{ item }">
+          <VCode class="text-xs">{{ item.roleKey }}</VCode>
         </template>
 
-        <template #item.roleDesc="{ item }">
-          <span class="block max-w-[320px] truncate text-xs opacity-60" :title="item.roleDesc">
-            {{ item.roleDesc || '—' }}
-          </span>
-        </template>
-
-        <template #item.users="{ item }">
-          <VChip :color="item.userCount > 0 ? 'primary' : 'default'" size="small" variant="tonal">
-            {{ item.userCount }}
-          </VChip>
+        <template #item.roleSort="{ item }">
+          <span class="text-xs opacity-60">{{ item.roleSort }}</span>
         </template>
 
         <template #item.status="{ item }">
           <VChip
             v-if="item.status"
-            :color="item.status === '1' ? 'success' : 'warning'"
+            :color="item.status === '0' ? 'success' : 'warning'"
             size="small"
             variant="tonal"
           >
@@ -345,7 +310,7 @@ function handleBatchDelete() {
         </template>
 
         <template #item.createTime="{ item }">
-          <span class="text-xs opacity-60">{{ item.createTime }}</span>
+          <span class="text-xs opacity-60">{{ item.createTime || '—' }}</span>
         </template>
 
         <template #item.actions="{ item }">
@@ -355,7 +320,7 @@ function handleBatchDelete() {
             icon="mdi-pencil-outline"
             size="small"
             variant="text"
-            @click="handleEdit(item.id)"
+            @click="handleEdit(item.roleId)"
           />
           <VBtn
             v-if="canDelete"

@@ -2,8 +2,9 @@
 import { computed, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 
-import { enableStatusOptions, userGenderOptions } from '@/constants/business';
-import { REG_EMAIL, REG_PHONE, REG_USER_NAME } from '@/constants/reg';
+import { enableStatusOptions, userSexOptions } from '@/constants/business';
+import { REG_EMAIL, REG_PHONE, REG_PWD } from '@/constants/reg';
+import { env } from '@/env';
 import { useFormRules, useVuetifyForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import { fetchCreateUser, fetchUpdateUser } from '@/service/api';
@@ -16,8 +17,8 @@ interface Props {
   operateType: 'add' | 'edit';
   /** The editing row data */
   rowData?: Api.SystemManage.User | null;
-  /** The enabled role options */
-  roleOptions: CommonType.Option<string>[];
+  /** The role options, the values are RuoYi role ids */
+  roleOptions: CommonType.Option<number>[];
 }
 
 const props = defineProps<Props>();
@@ -36,11 +37,13 @@ const submitting = ref(false);
 
 const model = ref<Api.SystemManage.UserForm>(createDefaultModel());
 
+const showPasswordField = computed(() => props.operateType === 'add');
+
 const title = computed(() =>
   props.operateType === 'add' ? $t('page.system.user.add') : $t('page.system.user.edit'),
 );
 
-const genderOptions = computed(() => translateOptions(userGenderOptions));
+const sexOptions = computed(() => translateOptions(userSexOptions));
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
@@ -48,40 +51,42 @@ const rules = computed(() => {
   const { createRequiredRule, createPatternRule } = useFormRules();
 
   return {
-    userName: [
-      createRequiredRule($t('form.userName.required')),
-      createPatternRule(REG_USER_NAME, $t('form.userName.invalid')),
+    userName: [createRequiredRule($t('form.userName.required'))],
+    phonenumber: createPatternRule(REG_PHONE, $t('form.phone.invalid')),
+    email: createPatternRule(REG_EMAIL, $t('form.email.invalid')),
+    password: [
+      createRequiredRule($t('form.pwd.required')),
+      createPatternRule(REG_PWD, $t('form.pwd.invalid')),
     ],
-    userPhone: createPatternRule(REG_PHONE, $t('form.phone.invalid')),
-    userEmail: createPatternRule(REG_EMAIL, $t('form.email.invalid')),
   };
 });
 
 function createDefaultModel(): Api.SystemManage.UserForm {
   return {
     userName: '',
-    userGender: null,
     nickName: '',
-    userPhone: '',
-    userEmail: '',
-    userRoles: [],
-    status: '1',
+    sex: '2',
+    phonenumber: '',
+    email: '',
+    status: '0',
+    roleIds: [],
+    password: env.defaultUserPassword,
   };
 }
 
 function initModel() {
   if (props.operateType === 'edit' && props.rowData) {
-    const { userName, userGender, nickName, userPhone, userEmail, userRoles, status } =
-      props.rowData;
+    const { userName, nickName, sex, phonenumber, email, status, roleIds, roles } = props.rowData;
 
     model.value = {
       userName,
-      userGender,
       nickName,
-      userPhone,
-      userEmail,
-      userRoles: [...userRoles],
-      status,
+      sex: sex ?? '2',
+      phonenumber: phonenumber ?? '',
+      email: email ?? '',
+      status: status ?? '0',
+      roleIds: roleIds ?? roles?.map((role) => role.roleId) ?? [],
+      password: '',
     };
 
     return;
@@ -104,9 +109,11 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    const payload: Api.SystemManage.UserForm = { ...model.value };
-
     if (props.operateType === 'add') {
+      const payload: Api.SystemManage.CreateUser = { ...model.value };
+
+      payload.password = payload.password || env.defaultUserPassword;
+
       const { error } = await fetchCreateUser(payload);
 
       if (error) {
@@ -119,7 +126,14 @@ async function handleSubmit() {
         return;
       }
 
-      const { error } = await fetchUpdateUser({ ...payload, id: props.rowData.id });
+      const payload: Api.SystemManage.UpdateUser = {
+        ...model.value,
+        userId: props.rowData.userId,
+      };
+
+      delete payload.password;
+
+      const { error } = await fetchUpdateUser(payload);
 
       if (error) {
         return;
@@ -186,20 +200,14 @@ watch(visible, (value) => {
               :rules="rules.userName"
             />
 
-            <div>
-              <div class="mb-1.5 text-sm opacity-80">
-                {{ $t('page.system.user.columns.userGender') }}
-              </div>
-
-              <VRadioGroup v-model="model.userGender" hide-details inline>
-                <VRadio
-                  v-for="option in genderOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </VRadioGroup>
-            </div>
+            <VTextField
+              v-if="showPasswordField"
+              v-model="model.password"
+              :label="$t('page.system.user.form.password')"
+              prepend-inner-icon="mdi-lock-outline"
+              :rules="rules.password"
+              type="password"
+            />
 
             <VTextField
               v-model="model.nickName"
@@ -208,32 +216,41 @@ watch(visible, (value) => {
               prepend-inner-icon="mdi-account-edit-outline"
             />
 
-            <VTextField
-              v-model="model.userPhone"
-              :label="$t('page.system.user.columns.userPhone')"
-              :placeholder="$t('page.system.user.form.userPhone')"
-              prepend-inner-icon="mdi-cellphone"
-              :rules="[rules.userPhone]"
+            <VSelect
+              v-model="model.sex"
+              item-title="label"
+              item-value="value"
+              :items="sexOptions"
+              :label="$t('page.system.user.columns.sex')"
+              :placeholder="$t('page.system.user.form.sex')"
+              prepend-inner-icon="mdi-gender-male-female"
             />
 
             <VTextField
-              v-model="model.userEmail"
-              :label="$t('page.system.user.columns.userEmail')"
-              :placeholder="$t('page.system.user.form.userEmail')"
+              v-model="model.phonenumber"
+              :label="$t('page.system.user.columns.phonenumber')"
+              :placeholder="$t('page.system.user.form.phonenumber')"
+              prepend-inner-icon="mdi-cellphone"
+              :rules="[rules.phonenumber]"
+            />
+
+            <VTextField
+              v-model="model.email"
+              :label="$t('page.system.user.email')"
+              :placeholder="$t('page.system.user.form.email')"
               prepend-inner-icon="mdi-email-outline"
-              :rules="[rules.userEmail]"
+              :rules="[rules.email]"
             />
 
             <VSelect
-              v-model="model.userRoles"
+              v-model="model.roleIds"
               chips
               closable-chips
               item-title="label"
               item-value="value"
               :items="roleOptions"
-              :label="$t('page.system.user.columns.userRoles')"
+              :label="$t('page.system.user.form.roleIds')"
               multiple
-              :placeholder="$t('page.system.user.form.userRoles')"
               prepend-inner-icon="mdi-shield-account-outline"
             />
 
@@ -268,5 +285,3 @@ watch(visible, (value) => {
     </div>
   </VNavigationDrawer>
 </template>
-
-<style scoped></style>

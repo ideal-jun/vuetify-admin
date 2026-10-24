@@ -3,69 +3,57 @@ import { request } from '../request';
 /**
  * Get the user list
  *
- * @param params The search params and the pagination params
+ * @param params The RuoYi query params
  */
-export function fetchGetUserList(params?: Api.SystemManage.UserSearchParams) {
+export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   return request<Api.SystemManage.UserList>({
-    url: '/systemManage/getUserList',
-    params,
+    url: '/system/user/list',
+    params: params as unknown as Record<string, unknown>,
   });
 }
 
 /**
  * Get the role list
  *
- * @param params The search params and the pagination params
+ * @param params The RuoYi query params
  */
-export function fetchGetRoleList(params?: Api.SystemManage.RoleSearchParams) {
+export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
   return request<Api.SystemManage.RoleList>({
-    url: '/systemManage/getRoleList',
-    params,
+    url: '/system/role/list',
+    params: params as unknown as Record<string, unknown>,
   });
 }
 
 /** Get all enabled roles */
 export function fetchGetAllRoles() {
-  return request<Api.SystemManage.AllRole[]>({ url: '/systemManage/getAllRoles' });
+  return request<Api.SystemManage.AllRole[]>({ url: '/system/role/optionselect' });
 }
 
 /**
  * Create a user
  *
- * @param data The user data
+ * @param data The RuoYi user payload
  */
 export function fetchCreateUser(data: Api.SystemManage.CreateUser) {
-  return request<boolean>({
-    url: '/systemManage/createUser',
-    method: 'POST',
-    data,
-  });
+  return request<null>({ url: '/system/user', method: 'POST', data });
 }
 
 /**
  * Update a user
  *
- * @param data The user data, including the user id
+ * @param data The RuoYi user payload, including the user id
  */
 export function fetchUpdateUser(data: Api.SystemManage.UpdateUser) {
-  return request<boolean>({
-    url: '/systemManage/updateUser',
-    method: 'PUT',
-    data,
-  });
+  return request<null>({ url: '/system/user', method: 'PUT', data });
 }
 
 /**
  * Delete a user
  *
- * @param id The user id
+ * @param userId The user id
  */
-export function fetchDeleteUser(id: number) {
-  return request<boolean>({
-    url: '/systemManage/deleteUser',
-    method: 'DELETE',
-    data: { id },
-  });
+export function fetchDeleteUser(userId: number) {
+  return request<null>({ url: `/system/user/${userId}`, method: 'DELETE' });
 }
 
 /**
@@ -74,50 +62,34 @@ export function fetchDeleteUser(id: number) {
  * @param ids The user ids
  */
 export function fetchBatchDeleteUser(ids: number[]) {
-  return request<boolean>({
-    url: '/systemManage/batchDeleteUser',
-    method: 'DELETE',
-    data: { ids },
-  });
+  return request<null>({ url: `/system/user/${ids.join(',')}`, method: 'DELETE' });
 }
 
 /**
  * Create a role
  *
- * @param data The role data
+ * @param data The RuoYi role payload
  */
 export function fetchCreateRole(data: Api.SystemManage.CreateRole) {
-  return request<boolean>({
-    url: '/systemManage/createRole',
-    method: 'POST',
-    data,
-  });
+  return request<null>({ url: '/system/role', method: 'POST', data });
 }
 
 /**
  * Update a role
  *
- * @param data The role data, including the role id
+ * @param data The RuoYi role payload, including the role id
  */
 export function fetchUpdateRole(data: Api.SystemManage.UpdateRole) {
-  return request<boolean>({
-    url: '/systemManage/updateRole',
-    method: 'PUT',
-    data,
-  });
+  return request<null>({ url: '/system/role', method: 'PUT', data });
 }
 
 /**
  * Delete a role
  *
- * @param id The role id
+ * @param roleId The role id
  */
-export function fetchDeleteRole(id: number) {
-  return request<boolean>({
-    url: '/systemManage/deleteRole',
-    method: 'DELETE',
-    data: { id },
-  });
+export function fetchDeleteRole(roleId: number) {
+  return request<null>({ url: `/system/role/${roleId}`, method: 'DELETE' });
 }
 
 /**
@@ -126,9 +98,56 @@ export function fetchDeleteRole(id: number) {
  * @param ids The role ids
  */
 export function fetchBatchDeleteRole(ids: number[]) {
-  return request<boolean>({
-    url: '/systemManage/batchDeleteRole',
-    method: 'DELETE',
-    data: { ids },
-  });
+  return request<null>({ url: `/system/role/${ids.join(',')}`, method: 'DELETE' });
+}
+
+/** Get the flat menu list from GET /system/menu/list */
+export function fetchGetMenuList() {
+  return request<Api.RuoYi.Menu[]>({ url: '/system/menu/list' });
+}
+
+/**
+ * Create a menu
+ *
+ * @param data The RuoYi menu payload
+ */
+export function fetchCreateMenu(data: Api.Menu.Create) {
+  return request<null>({ url: '/system/menu', method: 'POST', data });
+}
+
+/**
+ * Update a menu
+ *
+ * @param data The RuoYi menu payload, including the menu id
+ */
+export function fetchUpdateMenu(data: Api.Menu.Update) {
+  return request<null>({ url: '/system/menu', method: 'PUT', data });
+}
+
+/**
+ * Delete a menu
+ *
+ * @param menuId The menu id
+ */
+export function fetchDeleteMenu(menuId: number) {
+  return request<null>({ url: `/system/menu/${menuId}`, method: 'DELETE' });
+}
+
+/**
+ * Batch delete menus
+ *
+ * RuoYi only accepts one menu id per request, so the batch is sent one by one.
+ *
+ * @param ids The menu ids
+ */
+export async function fetchBatchDeleteMenu(ids: number[]) {
+  for (const id of ids) {
+    const result = await fetchDeleteMenu(id);
+
+    if (result.error) {
+      return result;
+    }
+  }
+
+  return { data: null, error: null };
 }

@@ -70,10 +70,10 @@ function handleSearch() {
 
                 <VCol cols="12" lg="3" md="4" sm="6">
                   <VTextField
-                    v-model="model.roleCode"
+                    v-model="model.roleKey"
                     clearable
-                    :label="$t('page.system.role.columns.roleCode')"
-                    :placeholder="$t('page.system.role.form.roleCode')"
+                    :label="$t('page.system.role.columns.roleKey')"
+                    :placeholder="$t('page.system.role.form.roleKey')"
                     prepend-inner-icon="mdi-identifier"
                   />
                 </VCol>

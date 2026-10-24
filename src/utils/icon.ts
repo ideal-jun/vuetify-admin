@@ -18,6 +18,47 @@ const ICON_MAP: Record<string, string> = {
   'mdi:keyboard-esc': 'mdi-keyboard-esc',
 };
 
+/** RuoYi uses Element icon names; map the common ones to the bundled MDI font */
+const RUOYI_ICON_MAP: Record<string, string> = {
+  build: 'mdi-hammer-wrench',
+  code: 'mdi-code-tags',
+  config: 'mdi-cog-outline',
+  dict: 'mdi-book-open-variant',
+  edit: 'mdi-pencil',
+  form: 'mdi-form-select',
+  guide: 'mdi-book-open-page-variant',
+  job: 'mdi-clock-outline',
+  log: 'mdi-file-document-outline',
+  logininfor: 'mdi-login',
+  message: 'mdi-bell-outline',
+  monitor: 'mdi-monitor',
+  nacos: 'mdi-hexagon-outline',
+  online: 'mdi-account-clock-outline',
+  peoples: 'mdi-account-group-outline',
+  post: 'mdi-badge-account-outline',
+  sentinel: 'mdi-shield-alert-outline',
+  server: 'mdi-server-outline',
+  swagger: 'mdi-api',
+  system: 'mdi-cog-outline',
+  tool: 'mdi-wrench-outline',
+  tree: 'mdi-file-tree',
+  'tree-table': 'mdi-table',
+  user: 'mdi-account-outline',
+};
+
+/**
+ * Translate a RuoYi (Element) icon name to the bundled MDI font
+ *
+ * Plain MDI names are returned as-is, unknown names fall back to a neutral icon.
+ */
+export function translateRuoYiIcon(icon?: string) {
+  if (!icon) {
+    return 'mdi-circle-small';
+  }
+
+  return RUOYI_ICON_MAP[icon] ?? (icon.startsWith('mdi-') ? icon : 'mdi-circle-small');
+}
+
 /**
  * Normalize an icon name
  *

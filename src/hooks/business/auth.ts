@@ -8,15 +8,16 @@ export function useAuth() {
       return false;
     }
 
-    const { buttons } = authStore.userInfo;
+    const { permissions } = authStore.userInfo;
 
-    if (authStore.isStaticSuper || buttons.includes('*')) {
+    // RuoYi uses "*:*:*" for a user that is allowed to do everything.
+    if (authStore.isStaticSuper || permissions.includes('*') || permissions.includes('*:*:*')) {
       return true;
     }
 
     const requiredCodes = typeof codes === 'string' ? [codes] : codes;
 
-    return requiredCodes.some((code) => buttons.includes(code));
+    return requiredCodes.some((code) => permissions.includes(code));
   }
 
   return {

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, toRaw } from 'vue';
 
+import { enableStatusOptions } from '@/constants/business';
 import { $t } from '@/locales';
-import { jsonClone } from '@/utils/common';
+import { jsonClone, translateOptions } from '@/utils/common';
 
 defineOptions({ name: 'MenuSearch' });
 
@@ -14,10 +15,7 @@ const model = defineModel<Api.Menu.SearchModel>('model', { required: true });
 
 const expanded = ref<string[]>(['search']);
 
-const statusOptions = computed<CommonType.Option<UnionKey.MenuStatus>[]>(() => [
-  { label: $t('page.system.menu.status.enabled'), value: 'enabled' },
-  { label: $t('page.system.menu.status.disabled'), value: 'disabled' },
-]);
+const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
 const defaultModel = jsonClone(toRaw(model.value));
 
@@ -62,21 +60,11 @@ function handleSearch() {
               <VRow density="compact">
                 <VCol cols="12" lg="3" md="4" sm="6">
                   <VTextField
-                    v-model="model.title"
+                    v-model="model.menuName"
                     clearable
-                    :label="$t('page.system.menu.columns.name')"
-                    :placeholder="$t('page.system.menu.search.title')"
+                    :label="$t('page.system.menu.columns.menuName')"
+                    :placeholder="$t('page.system.menu.search.menuName')"
                     prepend-inner-icon="mdi-menu"
-                  />
-                </VCol>
-
-                <VCol cols="12" lg="3" md="4" sm="6">
-                  <VTextField
-                    v-model="model.path"
-                    clearable
-                    :label="$t('page.system.menu.columns.path')"
-                    :placeholder="$t('page.system.menu.search.path')"
-                    prepend-inner-icon="mdi-routes"
                   />
                 </VCol>
 
@@ -93,7 +81,7 @@ function handleSearch() {
                   />
                 </VCol>
 
-                <VCol class="flex flex-wrap items-end justify-end gap-2" cols="12" lg="3">
+                <VCol class="flex flex-wrap items-end justify-end gap-2" cols="12" lg="6">
                   <VBtn prepend-icon="mdi-refresh" variant="text" @click="handleReset">
                     {{ $t('common.reset') }}
                   </VBtn>

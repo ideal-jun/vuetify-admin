@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted, reactive, ref } from 'vue';
 
-import { useCaptcha } from '@/hooks/business/captcha';
+import LangSwitch from '@/components/common/LangSwitch.vue';
+import SystemLogo from '@/components/common/SystemLogo.vue';
+import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue';
+import { env } from '@/env';
 import { useFormRules } from '@/hooks/common/form';
 import { $t } from '@/locales';
-import { fetchResetPassword, fetchSendCaptcha } from '@/service/api';
+import { fetchGetCaptcha } from '@/service/api';
 import { useAppStore } from '@/store/modules/app';
 import { useAuthStore } from '@/store/modules/auth';
 import { useThemeStore } from '@/store/modules/theme';
@@ -16,33 +18,34 @@ defineOptions({ name: 'Login' });
 interface LoginForm {
   userName: string;
   password: string;
-  phone: string;
   code: string;
   rememberMe: boolean;
 }
 
-const demoAccounts = [
-  { userName: 'admin', phone: '13800000001' },
-  { userName: 'Soybean', phone: '13800000002' },
-  { userName: 'User', phone: '13800000003' },
-];
+/** The captcha fields the login form keeps, the backend response also carries code/msg */
+interface CaptchaState {
+  img: string;
+  uuid: string;
+  captchaEnabled: boolean;
+}
 
-const route = useRoute();
-const router = useRouter();
 const authStore = useAuthStore();
 const appStore = useAppStore();
 const themeStore = useThemeStore();
-const { formRules } = useFormRules();
-const {
-  label: captchaLabel,
-  loading: captchaLoading,
-  isCounting: captchaCounting,
-  getCaptcha,
-} = useCaptcha(async (phone) => {
-  const { data, error } = await fetchSendCaptcha(phone);
+const { formRules, createRequiredRule } = useFormRules();
 
-  return Boolean(!error && data?.sent);
+const captcha = reactive<CaptchaState>({
+  img: '',
+  uuid: '',
+  captchaEnabled: false,
 });
+
+const captchaLoading = ref(false);
+
+const captchaImage = computed(() => (captcha.img ? `data:image/jpeg;base64,${captcha.img}` : ''));
+
+/** The RuoYi captcha is not always a 6-digit SMS code, so only require a non-empty value */
+const captchaRules = computed(() => [createRequiredRule($t('form.code.required'))]);
 
 const formRef = ref<{
   validate: () => Promise<{ valid: boolean }>;
@@ -53,59 +56,46 @@ const remembered = localStg.get('loginRememberMe') === true;
 
 const form = reactive<LoginForm>({
   userName: (remembered && localStg.get('loginUserName')) || 'admin',
-  password: '123456',
-  phone: (remembered && localStg.get('loginPhone')) || '',
+  password: env.defaultUserPassword,
   code: '',
   rememberMe: remembered,
 });
 
-const forgotDialogVisible = ref(false);
-const resetAccount = ref('');
-const resetLoading = ref(false);
+/** Load or refresh the image captcha of the RuoYi backend */
+async function loadCaptcha() {
+  captchaLoading.value = true;
 
-const activeModule = computed<UnionKey.LoginModule>(() => {
-  const module = route.params.module;
+  try {
+    const { data, error } = await fetchGetCaptcha();
 
-  if (module === 'code-login') {
-    return 'code-login';
+    if (error) {
+      return;
+    }
+
+    if (data) {
+      captcha.img = data.img;
+      captcha.uuid = data.uuid;
+      captcha.captchaEnabled = data.captchaEnabled;
+    }
+  } finally {
+    captchaLoading.value = false;
   }
+}
 
-  return 'pwd-login';
+onMounted(() => {
+  void loadCaptcha();
 });
-
-const isPwdLogin = computed(() => activeModule.value === 'pwd-login');
-
-watch(
-  () => activeModule.value,
-  () => {
-    formRef.value?.resetValidation();
-  },
-);
-
-function switchModule(module: UnionKey.LoginModule) {
-  void router.replace({ name: 'login', params: { module }, query: route.query });
-}
-
-function fillDemo(userName: string) {
-  const account = demoAccounts.find((item) => item.userName === userName);
-
-  form.userName = userName;
-  form.password = '123456';
-  form.phone = account?.phone ?? '';
-}
 
 function saveLoginPreference() {
   if (form.rememberMe) {
     localStg.set('loginRememberMe', true);
     localStg.set('loginUserName', form.userName);
-    localStg.set('loginPhone', form.phone);
 
     return;
   }
 
   localStg.remove('loginRememberMe');
   localStg.remove('loginUserName');
-  localStg.remove('loginPhone');
 }
 
 async function handleSubmit() {
@@ -115,49 +105,22 @@ async function handleSubmit() {
     return;
   }
 
-  const success = isPwdLogin.value
-    ? await authStore.login(form.userName, form.password)
-    : await authStore.loginByCode(form.phone, form.code);
+  const captchaPayload = captcha.captchaEnabled
+    ? { code: form.code, uuid: captcha.uuid }
+    : undefined;
+
+  const success = await authStore.login(form.userName, form.password, captchaPayload);
 
   if (success) {
-    if (!isPwdLogin.value) {
-      form.userName = authStore.userInfo.userName;
-    }
-
     saveLoginPreference();
-  }
-}
-
-async function sendCode() {
-  await getCaptcha(form.phone);
-}
-
-function openForgotDialog() {
-  resetAccount.value =
-    (isPwdLogin.value ? form.userName : form.phone) || form.userName || form.phone;
-  forgotDialogVisible.value = true;
-}
-
-async function handleResetPassword() {
-  const account = resetAccount.value.trim();
-
-  if (!account) {
-    window.$message?.error($t('page.login.common.accountRequired'));
 
     return;
   }
 
-  resetLoading.value = true;
-
-  try {
-    const { data, error } = await fetchResetPassword(account);
-
-    if (!error && data?.sent) {
-      window.$message?.success($t('page.login.common.resetPasswordSent'));
-      forgotDialogVisible.value = false;
-    }
-  } finally {
-    resetLoading.value = false;
+  // The captcha is single-use on the backend, fetch a fresh one and keep the form values.
+  if (captcha.captchaEnabled) {
+    form.code = '';
+    await loadCaptcha();
   }
 }
 </script>
@@ -218,73 +181,63 @@ async function handleResetPassword() {
         <h2 class="text-2xl text-base-text font-700">{{ $t('page.login.common.welcome') }}</h2>
         <p class="mt-1 text-sm opacity-50">{{ $t('system.desc') }}</p>
 
-        <VTabs
-          class="mt-6"
-          color="primary"
-          :model-value="activeModule"
-          @update:model-value="(value) => switchModule(value as UnionKey.LoginModule)"
-        >
-          <VTab class="text-none" value="pwd-login">{{ $t('page.login.pwdLogin.title') }}</VTab>
-          <VTab class="text-none" value="code-login">{{ $t('page.login.codeLogin.title') }}</VTab>
-        </VTabs>
-
         <VForm ref="formRef" class="mt-6" @submit.prevent="handleSubmit">
-          <template v-if="isPwdLogin">
+          <VTextField
+            v-model="form.userName"
+            autocomplete="username"
+            class="mb-3"
+            :label="$t('page.login.common.account')"
+            :placeholder="$t('page.login.common.userNamePlaceholder')"
+            prepend-inner-icon="mdi-account-outline"
+            :rules="formRules.userName"
+          />
+
+          <VTextField
+            v-model="form.password"
+            autocomplete="current-password"
+            class="mb-2"
+            :label="$t('page.login.common.password')"
+            :placeholder="$t('page.login.common.passwordPlaceholder')"
+            prepend-inner-icon="mdi-lock-outline"
+            :rules="formRules.pwd"
+            type="password"
+          />
+
+          <div v-if="captcha.captchaEnabled" class="mb-3 flex items-start gap-2">
             <VTextField
-              v-model="form.userName"
-              autocomplete="username"
-              class="mb-3"
-              :label="$t('page.login.common.account')"
-              :placeholder="$t('page.login.common.userNamePlaceholder')"
-              prepend-inner-icon="mdi-account-outline"
-              :rules="formRules.userName"
+              v-model="form.code"
+              class="flex-1"
+              :label="$t('page.login.common.captchaPlaceholder')"
+              prepend-inner-icon="mdi-shield-key-outline"
+              :rules="captchaRules"
             />
 
-            <VTextField
-              v-model="form.password"
-              autocomplete="current-password"
-              class="mb-2"
-              :label="$t('page.login.common.password')"
-              :placeholder="$t('page.login.common.passwordPlaceholder')"
-              prepend-inner-icon="mdi-lock-outline"
-              :rules="formRules.pwd"
-              type="password"
-            />
-          </template>
-
-          <template v-else>
-            <VTextField
-              v-model="form.phone"
-              class="mb-3"
-              :label="$t('page.login.common.phonePlaceholder')"
-              prepend-inner-icon="mdi-cellphone"
-              :rules="formRules.phone"
-            />
-
-            <div class="mb-3 flex gap-2">
-              <VTextField
-                v-model="form.code"
-                class="flex-1"
-                :label="$t('page.login.common.codePlaceholder')"
-                prepend-inner-icon="mdi-shield-key-outline"
-                :rules="formRules.code"
+            <button
+              :aria-label="$t('page.login.common.captchaRefresh')"
+              class="captcha-image mt-1"
+              type="button"
+              @click="loadCaptcha"
+            >
+              <img
+                v-if="captchaImage"
+                :alt="$t('page.login.common.captchaRefresh')"
+                :src="captchaImage"
               />
+              <span v-else class="captcha-image__placeholder">
+                <VProgressCircular indeterminate size="20" />
+              </span>
+            </button>
 
-              <VBtn
-                class="mt-1"
-                color="primary"
-                :disabled="captchaLoading || captchaCounting"
-                variant="tonal"
-                @click="sendCode"
-              >
-                {{ captchaLabel || $t('page.login.codeLogin.getCode') }}
-              </VBtn>
-            </div>
-
-            <div class="mb-3 text-xs opacity-50">
-              {{ $t('page.login.codeLogin.demoCode') }}
-            </div>
-          </template>
+            <VBtn
+              class="mt-1"
+              :disabled="captchaLoading"
+              icon="mdi-refresh"
+              :loading="captchaLoading"
+              size="small"
+              variant="text"
+              @click="loadCaptcha"
+            />
+          </div>
 
           <div class="mb-5 flex items-center justify-between">
             <VCheckbox
@@ -294,9 +247,6 @@ async function handleResetPassword() {
               hide-details
               :label="$t('page.login.common.rememberMe')"
             />
-            <VBtn class="text-primary" size="small" variant="text" @click="openForgotDialog">
-              {{ $t('page.login.common.forgotPassword') }}
-            </VBtn>
           </div>
 
           <VBtn
@@ -311,66 +261,46 @@ async function handleResetPassword() {
           </VBtn>
         </VForm>
 
-        <div class="mt-6 rounded-2xl bg-primary/5 p-4">
-          <div class="mb-2 flex items-center gap-2 text-xs font-600 text-primary">
-            <VIcon icon="mdi-information-outline" size="16" />
-            {{ $t('page.login.common.demoHint') }}
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            <VChip
-              v-for="account in demoAccounts"
-              :key="account.userName"
-              class="cursor-pointer"
-              color="primary"
-              size="small"
-              variant="tonal"
-              @click="fillDemo(account.userName)"
-            >
-              {{ account.userName }}
-            </VChip>
-          </div>
+        <div
+          class="mt-6 flex items-center gap-2 rounded-2xl bg-primary/5 p-4 text-xs text-primary font-600"
+        >
+          <VIcon icon="mdi-information-outline" size="16" />
+          {{ $t('page.login.common.ruoyiDemoHint') }}
         </div>
       </div>
 
       <div class="text-center text-xs opacity-40">© 2021-2026 Vuetify Admin</div>
     </div>
-
-    <VDialog v-model="forgotDialogVisible" max-width="420">
-      <VCard rounded="xl">
-        <VCardTitle class="text-base font-600">
-          {{ $t('page.login.common.resetPasswordTitle') }}
-        </VCardTitle>
-
-        <VCardText>
-          <p class="mb-4 text-sm opacity-60">
-            {{ $t('page.login.common.resetPasswordTip') }}
-          </p>
-
-          <VTextField
-            v-model="resetAccount"
-            autofocus
-            :label="$t('page.login.common.resetPasswordAccount')"
-            prepend-inner-icon="mdi-account-search-outline"
-            @keyup.enter="handleResetPassword"
-          />
-        </VCardText>
-
-        <VCardActions>
-          <VSpacer />
-          <VBtn variant="text" @click="forgotDialogVisible = false">
-            {{ $t('common.cancel') }}
-          </VBtn>
-          <VBtn color="primary" :loading="resetLoading" @click="handleResetPassword">
-            {{ $t('page.login.common.resetPasswordSend') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
   </div>
 </template>
 
 <style scoped>
+.captcha-image {
+  display: block;
+  width: 104px;
+  height: 40px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface));
+  cursor: pointer;
+}
+
+.captcha-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.captcha-image__placeholder {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
 .login-brand {
   background:
     radial-gradient(circle at 20% 15%, rgba(var(--v-theme-primary), 45%), transparent 42%),

@@ -70,7 +70,7 @@ const tabs = computed(() => [
       </VTabs>
     </template>
 
-    <VTabsWindow v-model="activeTab" class="pa-4">
+    <VTabsWindow v-model="activeTab" class="p-4">
       <VTabsWindowItem value="appearance">
         <AppearanceSettings />
       </VTabsWindowItem>

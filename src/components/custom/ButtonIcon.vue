@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import SvgIcon from '@/components/custom/SvgIcon.vue';
+
 defineOptions({ name: 'ButtonIcon', inheritAttrs: false });
 
 withDefaults(

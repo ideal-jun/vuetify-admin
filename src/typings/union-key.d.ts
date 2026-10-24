@@ -27,15 +27,6 @@ declare namespace UnionKey {
     | 'zoom-out'
     | 'none';
 
-  /** Login module */
-  type LoginModule = 'pwd-login' | 'code-login' | 'register' | 'reset-pwd' | 'bind-wechat';
-
-  /** Menu type */
-  type MenuType = 'directory' | 'menu' | 'button';
-
-  /** Menu status */
-  type MenuStatus = 'disabled' | 'enabled';
-
   /** Yes or no */
   type YesOrNo = 'Y' | 'N';
 }

@@ -2,32 +2,22 @@ declare namespace Api {
   /**
    * namespace Auth
    *
-   * backend api module: "auth"
+   * RuoYi auth responses are consumed directly.
    */
   namespace Auth {
-    interface LoginToken {
-      token: string;
-      refreshToken: string;
-    }
-
+    /** The logged-in user information returned by GET /system/user/getInfo */
     interface UserInfo {
-      userId: string;
-      userName: string;
+      user: Api.RuoYi.User;
       roles: string[];
-      buttons: string[];
+      permissions: string[];
     }
 
-    interface LoginParams {
-      userName: string;
-      password: string;
+    /** The captcha code and uuid sent with POST /auth/login */
+    interface LoginCaptcha {
+      code: string;
+      uuid: string;
     }
 
-    interface CaptchaResult {
-      sent: boolean;
-    }
-
-    interface ResetPasswordResult {
-      sent: boolean;
-    }
+    type Captcha = Api.RuoYi.Captcha;
   }
 }

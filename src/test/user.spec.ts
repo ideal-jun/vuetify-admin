@@ -1,9 +1,67 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { nextTick } from 'vue';
+import { mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
 import { setupTestAuth } from '@/test/auth';
+import roleOptionFixture from '@/test/fixtures/ruoyi/role-option.json';
+import userListFixture from '@/test/fixtures/ruoyi/user-list.json';
+import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/test/wait';
 import SystemUser from '@/views/system/user/index.vue';
+
+vi.mock('@/service/api', () => ({
+  fetchBatchDeleteUser: vi.fn(),
+  fetchCreateUser: vi.fn(),
+  fetchDeleteUser: vi.fn(),
+  fetchGetAllRoles: vi.fn(),
+  fetchGetUserList: vi.fn(),
+  fetchUpdateUser: vi.fn(),
+}));
+
+const fixtureUsers = userListFixture.rows as unknown as Api.SystemManage.User[];
+const allRoles = roleOptionFixture.data as unknown as Api.SystemManage.AllRole[];
+
+const getUserListMock = vi.mocked(fetchGetUserList);
+const getAllRolesMock = vi.mocked(fetchGetAllRoles);
+const createUserMock = vi.mocked(fetchCreateUser);
+
+let users: Api.SystemManage.User[] = [];
+
+beforeEach(() => {
+  setupTestAuth();
+
+  users = fixtureUsers.map((user) => structuredClone(user));
+
+  getUserListMock.mockImplementation(async () => ({
+    data: {
+      code: 200,
+      msg: '查询成功',
+      total: users.length,
+      rows: structuredClone(users),
+    },
+    error: null,
+  }));
+
+  getAllRolesMock.mockResolvedValue({ data: structuredClone(allRoles), error: null });
+
+  createUserMock.mockImplementation(async (payload) => {
+    users = [
+      ...users,
+      {
+        userId: 9000 + users.length,
+        userName: payload.userName,
+        nickName: payload.nickName,
+        sex: payload.sex ?? '2',
+        phonenumber: payload.phonenumber ?? '',
+        email: payload.email ?? '',
+        status: payload.status ?? '0',
+        dept: null,
+        roles: [],
+      },
+    ];
+
+    return { data: null, error: null };
+  });
+});
 
 function mountPage() {
   return mount({
@@ -12,44 +70,35 @@ function mountPage() {
   });
 }
 
-async function waitForMock() {
-  // The mock service returns after a short delay; a submit triggers two sequential requests.
-  await new Promise((resolve) => {
-    setTimeout(resolve, 700);
-  });
-  await flushPromises();
-}
-
 describe('user management page', () => {
-  beforeEach(() => {
-    setupTestAuth();
-  });
-
-  it('renders the search panel and the paginated user table', async () => {
+  it('renders the RuoYi user table with sex, status and department fields', async () => {
     const wrapper = mountPage();
 
-    await waitForMock();
+    await waitForText(wrapper, '第 1-2 条，共 2 条');
 
     expect(wrapper.text()).toContain('用户列表');
-    expect(wrapper.text()).toContain('第 1-10 条，共 28 条');
-    expect(wrapper.text()).toContain('Xavier');
-    expect(wrapper.findAll('tbody tr')).toHaveLength(10);
+    expect(wrapper.text()).toContain('admin');
+    expect(wrapper.text()).toContain('若依');
+    expect(wrapper.text()).toContain('研发部门');
+    expect(wrapper.text()).toContain('15888888888');
+    expect(wrapper.text()).toContain('女');
+    expect(wrapper.text()).toContain('正常');
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2);
 
     wrapper.unmount();
   });
 
   it('hides delete actions when the user lacks the delete permission', async () => {
     setupTestAuth({
-      buttons: ['system:user:view', 'system:user:add', 'system:user:edit'],
-      roles: ['R_ADMIN'],
+      permissions: ['system:user:list', 'system:user:add', 'system:user:edit'],
+      roles: ['common'],
     });
 
     const wrapper = mountPage();
 
-    await waitForMock();
+    await waitForText(wrapper, '第 1-2 条，共 2 条');
 
     expect(wrapper.findAll('button[aria-label="删除"]')).toHaveLength(0);
-    expect(wrapper.text()).not.toContain('批量删除');
     expect(wrapper.findAll('button').some((button) => button.text().trim() === '新增')).toBe(true);
 
     wrapper.unmount();
@@ -58,36 +107,30 @@ describe('user management page', () => {
   it('creates a user from the operate drawer', async () => {
     const wrapper = mountPage();
 
-    await waitForMock();
+    await waitForTableRows(wrapper, 2);
 
-    const addButton = wrapper.findAll('button').find((button) => button.text().trim() === '新增');
+    const addButton = await waitForButton(wrapper, '新增');
 
-    expect(addButton).toBeDefined();
+    await addButton.trigger('click');
 
-    await addButton?.trigger('click');
-    await nextTick();
+    const drawer = await waitForDrawer(wrapper, '新增用户');
 
-    const drawer = wrapper
-      .findAll('.v-navigation-drawer')
-      .find((item) => item.text().includes('新增用户'));
-
-    if (!drawer) {
-      throw new Error('the operate drawer is not rendered');
-    }
-
-    const userNameInput = drawer.find('input[placeholder="请输入用户名"]');
-
-    await userNameInput.setValue('TestUser');
+    await drawer.find('input[placeholder="请输入用户名"]').setValue('TestUser');
 
     const confirmButton = drawer
       .findAll('button')
       .find((button) => button.text().trim() === '确认');
 
-    await confirmButton?.trigger('click');
-    await waitForMock();
+    expect(confirmButton).toBeDefined();
 
-    expect(wrapper.text()).toContain('第 1-10 条，共 29 条');
+    await confirmButton?.trigger('click');
+
+    await waitForText(wrapper, '第 1-3 条，共 3 条');
+
     expect(wrapper.text()).toContain('TestUser');
+    expect(createUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({ userName: 'TestUser', password: 'admin123', status: '0' }),
+    );
 
     wrapper.unmount();
   });

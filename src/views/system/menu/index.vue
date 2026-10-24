@@ -4,20 +4,31 @@ import { computed, onMounted, ref } from 'vue';
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
 import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
-import { permissionCodes } from '@/constants/business';
+import { enableStatusRecord, menuTypeRecord, permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
 import { getColumnChecks } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { useMenuStore } from '@/store/modules/menu';
 import type { MenuTableRow } from '@/store/modules/menu';
+import { translateRuoYiIcon } from '@/utils/icon';
 
 import MenuOperateDrawer from './modules/MenuOperateDrawer.vue';
 import MenuSearch from './modules/MenuSearch.vue';
 
 defineOptions({ name: 'SystemMenu' });
 
-type MenuColumnKey = 'name' | 'path' | 'permission' | 'type' | 'sort' | 'status' | 'actions';
+type MenuColumnKey =
+  | 'menuName'
+  | 'menuType'
+  | 'orderNum'
+  | 'path'
+  | 'component'
+  | 'perms'
+  | 'icon'
+  | 'status'
+  | 'createTime'
+  | 'actions';
 
 interface MenuTableHeader {
   key: MenuColumnKey;
@@ -26,11 +37,13 @@ interface MenuTableHeader {
   minWidth?: number | string;
   align?: 'start' | 'center' | 'end';
   sortable?: boolean;
+  fixed?: boolean | 'start' | 'end';
 }
 
 const depthClassList = ['pl-0', 'pl-8', 'pl-16', 'pl-24', 'pl-32'];
 
 const menuStore = useMenuStore();
+
 const { hasAuth } = useAuth();
 
 const canAdd = computed(() => hasAuth(permissionCodes.menuAdd));
@@ -38,37 +51,37 @@ const canEdit = computed(() => hasAuth(permissionCodes.menuEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.menuDelete));
 
 const searchParams = ref<Api.Menu.SearchModel>({
-  title: null,
-  path: null,
+  menuName: null,
   status: null,
 });
 
 const appliedSearch = ref<Api.Menu.SearchModel>({ ...searchParams.value });
 
-const checkedRowKeys = ref<string[]>([]);
+const checkedRowKeys = ref<number[]>([]);
 
 const drawerVisible = ref(false);
 
 const operateType = ref<'add' | 'edit'>('add');
 
-const editingId = ref<string | null>(null);
+const editingId = ref<number | null>(null);
 
-const addParentId = ref('');
+const addParentId = ref(0);
 
-const addDefaultType = ref<UnionKey.MenuType>('menu');
+const addDefaultType = ref<Api.RuoYi.MenuType>('C');
 
-const collapsedIds = ref<string[]>([]);
+const collapsedIds = ref<number[]>([]);
 
-const menuRowMap = computed(() => new Map(menuStore.flatMenus.map((item) => [item.id, item])));
+const menuRowMap = computed(() => new Map(menuStore.flatMenus.map((item) => [item.menuId, item])));
 
 const menuParentIds = computed(
-  () => new Set(menuStore.flatMenus.map((item) => item.parentId).filter(Boolean)),
+  () =>
+    new Set(menuStore.flatMenus.map((item) => item.parentId).filter((parentId) => parentId !== 0)),
 );
 
 const collapsedSet = computed(() => new Set(collapsedIds.value));
 
-function hasChildren(id: string) {
-  return menuParentIds.value.has(id);
+function hasChildren(menuId: number) {
+  return menuParentIds.value.has(menuId);
 }
 
 function isRowVisible(row: MenuTableRow) {
@@ -79,60 +92,72 @@ function isRowVisible(row: MenuTableRow) {
       return false;
     }
 
-    parentId = menuRowMap.value.get(parentId)?.parentId ?? null;
+    parentId = menuRowMap.value.get(parentId)?.parentId ?? 0;
   }
 
   return true;
 }
 
 const filteredMenus = computed(() => {
-  const title = appliedSearch.value.title?.trim().toLowerCase() ?? '';
-  const path = appliedSearch.value.path?.trim().toLowerCase() ?? '';
+  const menuName = appliedSearch.value.menuName?.trim().toLowerCase() ?? '';
   const status = appliedSearch.value.status;
-  const hasFilter = Boolean(title || path || status);
+  const hasFilter = Boolean(menuName || status);
 
   if (!hasFilter) {
     return menuStore.flatMenus.filter((item) => isRowVisible(item));
   }
 
-  const matchedIds = new Set<string>();
+  const matchedIds = new Set<number>();
 
   for (const item of menuStore.flatMenus) {
     const matched =
-      (!title || item.title.toLowerCase().includes(title)) &&
-      (!path || item.path.toLowerCase().includes(path)) &&
+      (!menuName || item.menuName.toLowerCase().includes(menuName)) &&
       (!status || item.status === status);
 
     if (!matched) {
       continue;
     }
 
-    matchedIds.add(item.id);
+    matchedIds.add(item.menuId);
 
     let parentId = item.parentId;
 
     while (parentId) {
       matchedIds.add(parentId);
-      parentId = menuRowMap.value.get(parentId)?.parentId ?? null;
+      parentId = menuRowMap.value.get(parentId)?.parentId ?? 0;
     }
   }
 
-  return menuStore.flatMenus.filter((item) => matchedIds.has(item.id) && isRowVisible(item));
+  return menuStore.flatMenus.filter((item) => matchedIds.has(item.menuId) && isRowVisible(item));
 });
 
 const editingData = computed<MenuTableRow | null>(() => {
-  if (!editingId.value) {
+  if (editingId.value === null) {
     return null;
   }
 
-  return menuStore.flatMenus.find((item) => item.id === editingId.value) ?? null;
+  return menuStore.flatMenus.find((item) => item.menuId === editingId.value) ?? null;
 });
 
 const baseHeaders = computed<MenuTableHeader[]>(() => [
   {
-    key: 'name',
-    title: $t('page.system.menu.columns.name'),
+    key: 'menuName',
+    title: $t('page.system.menu.columns.menuName'),
     minWidth: 220,
+    sortable: false,
+  },
+  {
+    key: 'menuType',
+    title: $t('page.system.menu.columns.menuType'),
+    width: 100,
+    align: 'center',
+    sortable: false,
+  },
+  {
+    key: 'orderNum',
+    title: $t('page.system.menu.columns.orderNum'),
+    width: 90,
+    align: 'center',
     sortable: false,
   },
   {
@@ -142,21 +167,20 @@ const baseHeaders = computed<MenuTableHeader[]>(() => [
     sortable: false,
   },
   {
-    key: 'permission',
-    title: $t('page.system.menu.columns.permission'),
+    key: 'component',
+    title: $t('page.system.menu.columns.component'),
+    minWidth: 200,
+    sortable: false,
+  },
+  {
+    key: 'perms',
+    title: $t('page.system.menu.columns.perms'),
     minWidth: 180,
     sortable: false,
   },
   {
-    key: 'type',
-    title: $t('page.system.menu.columns.type'),
-    width: 100,
-    align: 'center',
-    sortable: false,
-  },
-  {
-    key: 'sort',
-    title: $t('page.system.menu.columns.sort'),
+    key: 'icon',
+    title: $t('page.system.menu.columns.icon'),
     width: 90,
     align: 'center',
     sortable: false,
@@ -169,11 +193,18 @@ const baseHeaders = computed<MenuTableHeader[]>(() => [
     sortable: false,
   },
   {
+    key: 'createTime',
+    title: $t('page.system.menu.columns.createTime'),
+    width: 170,
+    sortable: false,
+  },
+  {
     key: 'actions',
     title: $t('page.system.menu.columns.actions'),
     width: 200,
     align: 'center',
     sortable: false,
+    fixed: 'end',
   },
 ]);
 
@@ -198,13 +229,13 @@ function getDepthClass(depth: number) {
   return depthClassList[Math.min(depth, depthClassList.length - 1)];
 }
 
-function toggleExpand(id: string) {
-  collapsedIds.value = collapsedIds.value.includes(id)
-    ? collapsedIds.value.filter((item) => item !== id)
-    : [...collapsedIds.value, id];
+function toggleExpand(menuId: number) {
+  collapsedIds.value = collapsedIds.value.includes(menuId)
+    ? collapsedIds.value.filter((item) => item !== menuId)
+    : [...collapsedIds.value, menuId];
 }
 
-function openCreate(parentId = '', type: UnionKey.MenuType = 'menu') {
+function openCreate(parentId = 0, type: Api.RuoYi.MenuType = 'C') {
   if (parentId) {
     collapsedIds.value = collapsedIds.value.filter((id) => id !== parentId);
   }
@@ -218,7 +249,7 @@ function openCreate(parentId = '', type: UnionKey.MenuType = 'menu') {
 
 function openEdit(row: MenuTableRow) {
   operateType.value = 'edit';
-  editingId.value = row.id;
+  editingId.value = row.menuId;
   drawerVisible.value = true;
 }
 
@@ -238,8 +269,8 @@ async function handleRefresh() {
   await menuStore.reloadMenus();
 }
 
-function handleToggleStatus(row: MenuTableRow) {
-  menuStore.toggleStatus(row.id);
+async function handleToggleStatus(row: MenuTableRow) {
+  await menuStore.toggleStatus(row.menuId);
 }
 
 function handleDelete(row: MenuTableRow) {
@@ -248,9 +279,14 @@ function handleDelete(row: MenuTableRow) {
     content: $t('common.confirmDelete'),
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
-    onPositiveClick: () => {
-      menuStore.removeMenu(row.id);
-      checkedRowKeys.value = checkedRowKeys.value.filter((id) => id !== row.id);
+    onPositiveClick: async () => {
+      const success = await menuStore.removeMenu(row.menuId);
+
+      if (!success) {
+        return;
+      }
+
+      checkedRowKeys.value = checkedRowKeys.value.filter((id) => id !== row.menuId);
       window.$message?.success($t('common.deleteSuccess'));
     },
   });
@@ -268,9 +304,9 @@ function handleBatchDelete() {
     content: $t('page.system.menu.confirmBatchDelete', { count: ids.length }),
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
-    onPositiveClick: () => {
-      for (const id of ids) {
-        menuStore.removeMenu(id);
+    onPositiveClick: async () => {
+      for (const menuId of ids) {
+        await menuStore.removeMenu(menuId);
       }
 
       checkedRowKeys.value = [];
@@ -320,100 +356,114 @@ onMounted(() => {
         :headers="visibleHeaders"
         hide-default-footer
         hover
-        item-value="id"
+        item-value="menuId"
         :items="filteredMenus"
         :items-per-page="-1"
         :loading="menuStore.isLoading"
         :no-data-text="$t('page.system.menu.empty')"
         show-select
       >
-        <template #item.name="{ item }">
+        <template #item.menuName="{ item }">
           <div class="flex items-center gap-2" :class="getDepthClass(item.depth)">
             <VBtn
-              v-if="hasChildren(item.id)"
+              v-if="hasChildren(item.menuId)"
               :aria-label="
-                collapsedIds.includes(item.id)
+                collapsedIds.includes(item.menuId)
                   ? $t('page.system.menu.expand')
                   : $t('page.system.menu.collapse')
               "
               density="compact"
-              :icon="collapsedIds.includes(item.id) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
+              :icon="collapsedIds.includes(item.menuId) ? 'mdi-chevron-right' : 'mdi-chevron-down'"
               size="x-small"
               variant="text"
-              @click.stop="toggleExpand(item.id)"
+              @click.stop="toggleExpand(item.menuId)"
             />
             <span v-else class="inline-block w-7" />
 
-            <VIcon v-if="item.icon" class="opacity-60" :icon="item.icon" size="18" />
             <VIcon
-              v-else-if="item.type === 'button'"
+              v-if="item.icon"
+              class="opacity-60"
+              :icon="translateRuoYiIcon(item.icon)"
+              size="18"
+            />
+            <VIcon
+              v-else-if="item.menuType === 'F'"
               class="opacity-40"
               icon="mdi-gesture-tap-button"
               size="18"
             />
             <span v-else class="inline-block w-[18px]" />
 
-            <span class="font-500">{{ item.title }}</span>
+            <span class="font-500">{{ item.menuName }}</span>
           </div>
+        </template>
+
+        <template #item.menuType="{ item }">
+          <VChip
+            :color="item.menuType === 'M' ? 'info' : item.menuType === 'F' ? 'warning' : 'primary'"
+            size="small"
+            variant="tonal"
+          >
+            {{ $t(menuTypeRecord[item.menuType]) }}
+          </VChip>
+        </template>
+
+        <template #item.orderNum="{ item }">
+          <span class="text-xs opacity-60">{{ item.orderNum }}</span>
         </template>
 
         <template #item.path="{ item }">
           <VCode class="text-xs">{{ item.path || '—' }}</VCode>
         </template>
 
-        <template #item.permission="{ item }">
-          <VCode v-if="item.type === 'button'" class="text-xs">{{ item.permission }}</VCode>
+        <template #item.component="{ item }">
+          <VCode v-if="item.component" class="text-xs">{{ item.component }}</VCode>
           <span v-else class="opacity-40">—</span>
         </template>
 
-        <template #item.type="{ item }">
-          <VChip
-            :color="
-              item.type === 'directory' ? 'info' : item.type === 'button' ? 'warning' : 'primary'
-            "
-            size="small"
-            variant="tonal"
-          >
-            {{
-              item.type === 'directory'
-                ? $t('page.system.menu.type.directory')
-                : item.type === 'button'
-                  ? $t('page.system.menu.type.button')
-                  : $t('page.system.menu.type.menu')
-            }}
-          </VChip>
+        <template #item.perms="{ item }">
+          <VCode v-if="item.perms" class="text-xs">{{ item.perms }}</VCode>
+          <span v-else class="opacity-40">—</span>
         </template>
 
-        <template #item.sort="{ item }">
-          <span class="text-xs opacity-60">{{ item.sort }}</span>
+        <template #item.icon="{ item }">
+          <VIcon
+            v-if="item.icon"
+            class="opacity-70"
+            :icon="translateRuoYiIcon(item.icon)"
+            size="18"
+          />
+          <span v-else class="opacity-40">—</span>
         </template>
 
         <template #item.status="{ item }">
           <VChip
-            :color="item.status === 'enabled' ? 'success' : 'default'"
+            v-if="item.status"
+            :color="item.status === '0' ? 'success' : 'warning'"
             size="small"
             variant="tonal"
           >
-            {{
-              item.status === 'enabled'
-                ? $t('page.system.menu.status.enabled')
-                : $t('page.system.menu.status.disabled')
-            }}
+            {{ $t(enableStatusRecord[item.status]) }}
           </VChip>
+          <span v-else class="opacity-40">—</span>
+        </template>
+
+        <template #item.createTime="{ item }">
+          <span class="text-xs opacity-60">{{ item.createTime || '—' }}</span>
         </template>
 
         <template #item.actions="{ item }">
           <VBtn
-            v-if="canAdd && item.type !== 'button'"
+            v-if="canAdd && item.menuType !== 'F'"
             :aria-label="
-              item.type === 'directory'
+              item.menuType === 'M'
                 ? $t('page.system.menu.addChild')
                 : $t('page.system.menu.addButton')
             "
             icon="mdi-plus"
             size="small"
             variant="text"
-            @click="openCreate(item.id, item.type === 'directory' ? 'menu' : 'button')"
+            @click="openCreate(item.menuId, item.menuType === 'M' ? 'C' : 'F')"
           />
           <VBtn
             v-if="canEdit"
@@ -426,11 +476,11 @@ onMounted(() => {
           <VBtn
             v-if="canEdit"
             :aria-label="
-              item.status === 'enabled'
-                ? $t('page.system.menu.status.disabled')
-                : $t('page.system.menu.status.enabled')
+              item.status === '0'
+                ? $t('page.system.common.status.disabled')
+                : $t('page.system.common.status.normal')
             "
-            :icon="item.status === 'enabled' ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
+            :icon="item.status === '0' ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
             size="small"
             variant="text"
             @click="handleToggleStatus(item)"

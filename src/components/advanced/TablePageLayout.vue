@@ -22,7 +22,7 @@ withDefaults(
       class="app-panel flex min-h-[60vh] flex-1 flex-col overflow-hidden md:min-h-0"
       rounded="10px"
     >
-      <div class="flex shrink-0 flex-col justify-between gap-3 pa-2 md:flex-row md:items-center">
+      <div class="flex shrink-0 flex-col justify-between gap-3 p-2 md:flex-row md:items-center">
         <div class="text-base font-700">
           <slot name="title">{{ title }}</slot>
         </div>

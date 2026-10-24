@@ -10,8 +10,6 @@ declare namespace StorageType {
     lang: App.I18n.LangType;
     /** The token */
     token: string;
-    /** The refresh token */
-    refreshToken: string;
     /** The theme color */
     themeColor: string;
     /** The dark mode */

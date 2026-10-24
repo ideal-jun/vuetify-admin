@@ -4,7 +4,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
 import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
-import { enableStatusRecord, permissionCodes, userGenderRecord } from '@/constants/business';
+import { enableStatusRecord, permissionCodes, userSexRecord } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
 import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
@@ -22,11 +22,11 @@ import UserSearch from './modules/UserSearch.vue';
 defineOptions({ name: 'SystemUser' });
 
 type UserColumnKey =
-  | 'index'
   | 'userName'
-  | 'userGender'
-  | 'contact'
-  | 'userRoles'
+  | 'nickName'
+  | 'dept'
+  | 'phonenumber'
+  | 'sex'
   | 'status'
   | 'createTime'
   | 'actions';
@@ -38,29 +38,15 @@ interface UserTableHeader {
   minWidth?: number | string;
   align?: 'start' | 'center' | 'end';
   sortable?: boolean;
+  fixed?: boolean | 'start' | 'end';
 }
-
-interface TableSortItem {
-  key: string;
-  order?: 'asc' | 'desc';
-}
-
-const roleColorMap: Record<string, string> = {
-  R_SUPER: 'error',
-  R_ADMIN: 'primary',
-  R_USER: 'success',
-  R_GUEST: 'info',
-};
 
 const pageSizeOptions = [10, 20, 50];
 
 function createDefaultSearchModel(): Api.SystemManage.UserSearchModel {
   return {
     userName: null,
-    userGender: null,
-    nickName: null,
-    userPhone: null,
-    userEmail: null,
+    phonenumber: null,
     status: null,
   };
 }
@@ -70,7 +56,6 @@ const searchParams = ref<Api.SystemManage.UserSearchModel>(createDefaultSearchMo
 const tableOptions = reactive({
   page: 1,
   itemsPerPage: 10,
-  sortBy: [] as TableSortItem[],
 });
 
 const data = ref<Api.SystemManage.User[]>([]);
@@ -82,16 +67,13 @@ let requestSequence = 0;
 
 async function loadUsers() {
   const sequence = ++requestSequence;
-  const sort = tableOptions.sortBy[0];
 
   loading.value = true;
 
   const { data: userList, error } = await fetchGetUserList({
     ...searchParams.value,
-    current: tableOptions.page,
-    size: tableOptions.itemsPerPage,
-    sortBy: sort?.key ?? null,
-    sortOrder: sort?.order ?? null,
+    pageNum: tableOptions.page,
+    pageSize: tableOptions.itemsPerPage,
   });
 
   if (sequence !== requestSequence) {
@@ -107,7 +89,7 @@ async function loadUsers() {
     return;
   }
 
-  data.value = userList.records;
+  data.value = userList.rows;
   total.value = userList.total;
 }
 
@@ -118,39 +100,40 @@ const canEdit = computed(() => hasAuth(permissionCodes.userEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.userDelete));
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.User, number>(data, 'id', loadUsers);
+  useTableOperate<Api.SystemManage.User, number>(data, 'userId', loadUsers);
 
-const roleOptions = ref<CommonType.Option<string>[]>([]);
-
-const roleNameMap = computed<Record<string, string>>(() =>
-  Object.fromEntries(roleOptions.value.map((role) => [role.value, role.label])),
-);
+const roleOptions = ref<CommonType.Option<number>[]>([]);
 
 const baseHeaders = computed<UserTableHeader[]>(() => [
-  { key: 'index', title: $t('common.index'), width: 64, align: 'center', sortable: false },
   {
     key: 'userName',
     title: $t('page.system.user.columns.userName'),
     minWidth: 180,
-    sortable: true,
-  },
-  {
-    key: 'userGender',
-    title: $t('page.system.user.columns.userGender'),
-    width: 90,
-    align: 'center',
-    sortable: true,
-  },
-  {
-    key: 'contact',
-    title: $t('page.system.user.columns.contact'),
-    minWidth: 220,
     sortable: false,
   },
   {
-    key: 'userRoles',
-    title: $t('page.system.user.columns.userRoles'),
+    key: 'nickName',
+    title: $t('page.system.user.columns.nickName'),
     minWidth: 140,
+    sortable: false,
+  },
+  {
+    key: 'dept',
+    title: $t('page.system.user.columns.dept'),
+    minWidth: 140,
+    sortable: false,
+  },
+  {
+    key: 'phonenumber',
+    title: $t('page.system.user.columns.phonenumber'),
+    minWidth: 150,
+    sortable: false,
+  },
+  {
+    key: 'sex',
+    title: $t('page.system.user.columns.sex'),
+    width: 90,
+    align: 'center',
     sortable: false,
   },
   {
@@ -158,13 +141,13 @@ const baseHeaders = computed<UserTableHeader[]>(() => [
     title: $t('page.system.user.columns.status'),
     width: 100,
     align: 'center',
-    sortable: true,
+    sortable: false,
   },
   {
     key: 'createTime',
     title: $t('page.system.user.columns.createTime'),
     width: 180,
-    sortable: true,
+    sortable: false,
   },
   {
     key: 'actions',
@@ -172,6 +155,7 @@ const baseHeaders = computed<UserTableHeader[]>(() => [
     width: 120,
     align: 'center',
     sortable: false,
+    fixed: 'end',
   },
 ]);
 
@@ -192,10 +176,6 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-function getRoleColor(roleCode: string) {
-  return roleColorMap[roleCode] ?? 'default';
-}
-
 async function loadRoles() {
   const { data: roleList, error } = await fetchGetAllRoles();
 
@@ -205,17 +185,17 @@ async function loadRoles() {
 
   roleOptions.value = roleList.map((role) => ({
     label: role.roleName,
-    value: role.roleCode,
+    value: role.roleId,
   }));
 }
 
 watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, tableOptions.sortBy, refreshKey.value],
+  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
   () => {
     checkedRowKeys.value = [];
     void loadUsers();
   },
-  { deep: true, immediate: true },
+  { immediate: true },
 );
 
 function handleSearch() {
@@ -250,7 +230,7 @@ function handleDelete(user: Api.SystemManage.User) {
     positiveText: $t('common.confirm'),
     negativeText: $t('common.cancel'),
     onPositiveClick: async () => {
-      const { error } = await fetchDeleteUser(user.id);
+      const { error } = await fetchDeleteUser(user.userId);
 
       if (error) {
         return;
@@ -325,14 +305,13 @@ onMounted(() => {
         v-model="checkedRowKeys"
         v-model:items-per-page="tableOptions.itemsPerPage"
         v-model:page="tableOptions.page"
-        v-model:sort-by="tableOptions.sortBy"
         class="min-h-0 flex-1"
         density="comfortable"
         fixed-header
         :headers="visibleHeaders"
         :hide-default-footer="total === 0"
         hover
-        item-value="id"
+        item-value="userId"
         :items="data"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
@@ -342,10 +321,6 @@ onMounted(() => {
         show-current-page
         show-select
       >
-        <template #item.index="{ index }">
-          {{ (tableOptions.page - 1) * tableOptions.itemsPerPage + index + 1 }}
-        </template>
-
         <template #item.userName="{ item }">
           <div class="flex items-center gap-2.5">
             <VAvatar color="primary" size="32" variant="tonal">
@@ -353,49 +328,38 @@ onMounted(() => {
                 {{ item.userName.slice(0, 1).toUpperCase() }}
               </span>
             </VAvatar>
-            <div class="min-w-0">
-              <div class="font-500">{{ item.userName }}</div>
-              <div class="text-[11px] opacity-50">{{ item.nickName || '—' }}</div>
-            </div>
+            <span class="font-500">{{ item.userName }}</span>
           </div>
         </template>
 
-        <template #item.userGender="{ item }">
+        <template #item.nickName="{ item }">
+          <span class="text-sm">{{ item.nickName || '—' }}</span>
+        </template>
+
+        <template #item.dept="{ item }">
+          <span class="text-sm">{{ item.dept?.deptName || '—' }}</span>
+        </template>
+
+        <template #item.phonenumber="{ item }">
+          <span class="text-xs">{{ item.phonenumber || '—' }}</span>
+        </template>
+
+        <template #item.sex="{ item }">
           <VChip
-            v-if="item.userGender"
-            :color="item.userGender === '1' ? 'primary' : 'error'"
+            v-if="item.sex"
+            :color="item.sex === '0' ? 'primary' : item.sex === '1' ? 'error' : 'default'"
             size="small"
             variant="tonal"
           >
-            {{ $t(userGenderRecord[item.userGender]) }}
+            {{ $t(userSexRecord[item.sex]) }}
           </VChip>
           <span v-else class="opacity-40">—</span>
-        </template>
-
-        <template #item.contact="{ item }">
-          <div class="text-xs">{{ item.userEmail || '—' }}</div>
-          <div class="mt-0.5 text-[11px] opacity-50">{{ item.userPhone || '—' }}</div>
-        </template>
-
-        <template #item.userRoles="{ item }">
-          <div class="flex flex-wrap gap-1 py-1">
-            <VChip
-              v-for="role in item.userRoles"
-              :key="role"
-              :color="getRoleColor(role)"
-              size="x-small"
-              variant="tonal"
-            >
-              {{ roleNameMap[role] ?? role }}
-            </VChip>
-            <span v-if="item.userRoles.length === 0" class="opacity-40">—</span>
-          </div>
         </template>
 
         <template #item.status="{ item }">
           <VChip
             v-if="item.status"
-            :color="item.status === '1' ? 'success' : 'warning'"
+            :color="item.status === '0' ? 'success' : 'warning'"
             size="small"
             variant="tonal"
           >
@@ -405,7 +369,7 @@ onMounted(() => {
         </template>
 
         <template #item.createTime="{ item }">
-          <span class="text-xs opacity-60">{{ item.createTime }}</span>
+          <span class="text-xs opacity-60">{{ item.createTime || '—' }}</span>
         </template>
 
         <template #item.actions="{ item }">
@@ -415,7 +379,7 @@ onMounted(() => {
             icon="mdi-pencil-outline"
             size="small"
             variant="text"
-            @click="handleEdit(item.id)"
+            @click="handleEdit(item.userId)"
           />
           <VBtn
             v-if="canDelete"

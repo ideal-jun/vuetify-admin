@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import ButtonIcon from '@/components/custom/ButtonIcon.vue';
+import SvgIcon from '@/components/custom/SvgIcon.vue';
 import { $t } from '@/locales';
 
 defineOptions({ name: 'MenuToggler' });

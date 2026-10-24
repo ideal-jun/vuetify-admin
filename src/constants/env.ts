@@ -5,6 +5,3 @@ export const isDev = env.isDev;
 
 /** Whether the app is running in the production environment */
 export const isProd = env.isProd;
-
-/** Whether the built-in mock service is enabled */
-export const isMock = env.isMock;

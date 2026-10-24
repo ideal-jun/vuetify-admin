@@ -2,100 +2,58 @@ declare namespace Api {
   /**
    * namespace SystemManage
    *
-   * backend api module: "systemManage"
+   * The system management views talk to RuoYi fields directly; the aliases below keep the view imports short.
    */
   namespace SystemManage {
-    /**
-     * user gender
-     *
-     * - "1": "male"
-     * - "2": "female"
-     */
-    type UserGender = '1' | '2';
+    type User = Api.RuoYi.User;
+    type Role = Api.RuoYi.Role;
+    type Menu = Api.RuoYi.Menu;
 
-    /** role */
-    type Role = Common.CommonRecord<{
-      /** role name */
-      roleName: string;
-      /** role code */
-      roleCode: string;
-      /** role description */
-      roleDesc: string;
-      /** the count of users bound to the role */
-      userCount: number;
-    }>;
+    type UserList = Api.RuoYi.TableData<User>;
+    type RoleList = Api.RuoYi.TableData<Role>;
 
-    /** role search params */
-    type RoleSearchParams = CommonType.RecordNullable<
-      Pick<Role, 'roleName' | 'roleCode' | 'status'> & Common.CommonSearchParams
-    > & {
-      /** the field to sort by */
-      sortBy?: string | null;
-      /** the sort direction */
-      sortOrder?: 'asc' | 'desc' | null;
+    type AllRole = Pick<Role, 'roleId' | 'roleName' | 'roleKey'>;
+
+    /** The search model kept by the user search panel */
+    type UserSearchModel = {
+      userName: string | null;
+      phonenumber: string | null;
+      status: Api.RuoYi.Status | null;
     };
 
-    /** the search model kept by the role search panel */
-    type RoleSearchModel = Omit<RoleSearchParams, 'current' | 'size' | 'sortBy' | 'sortOrder'>;
-
-    /** role list */
-    type RoleList = Common.PaginatingQueryRecord<Role>;
-
-    /** the enabled roles used by the user form */
-    type AllRole = Pick<Role, 'id' | 'roleName' | 'roleCode'>;
-
-    /** the role fields that can be created or updated */
-    type RoleForm = Pick<Role, 'roleName' | 'roleCode' | 'roleDesc' | 'status'>;
-
-    /** create role params */
-    type CreateRole = RoleForm;
-
-    /** update role params */
-    type UpdateRole = RoleForm & Pick<Role, 'id'>;
-
-    /** user */
-    type User = Common.CommonRecord<{
-      /** user name */
-      userName: string;
-      /** user gender */
-      userGender: UserGender | null;
-      /** user nick name */
-      nickName: string;
-      /** user phone */
-      userPhone: string;
-      /** user email */
-      userEmail: string;
-      /** user role code collection */
-      userRoles: string[];
-    }>;
-
-    /** user search params */
-    type UserSearchParams = CommonType.RecordNullable<
-      Pick<User, 'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'status'> &
-        Common.CommonSearchParams
-    > & {
-      /** the field to sort by */
-      sortBy?: string | null;
-      /** the sort direction */
-      sortOrder?: 'asc' | 'desc' | null;
+    /** The query params sent to /system/user/list */
+    type UserSearchParams = UserSearchModel & {
+      pageNum: number;
+      pageSize: number;
     };
 
-    /** the search model kept by the search panel, pagination and sorting are owned by the data table */
-    type UserSearchModel = Omit<UserSearchParams, 'current' | 'size' | 'sortBy' | 'sortOrder'>;
-
-    /** user list */
-    type UserList = Common.PaginatingQueryRecord<User>;
-
-    /** the user fields that can be created or updated */
+    /** The user fields that can be created or updated */
     type UserForm = Pick<
       User,
-      'userName' | 'userGender' | 'nickName' | 'userPhone' | 'userEmail' | 'userRoles' | 'status'
-    >;
+      'userName' | 'nickName' | 'sex' | 'phonenumber' | 'email' | 'status' | 'roleIds'
+    > & {
+      /** The initial password used on create */
+      password?: string;
+    };
 
-    /** create user params */
     type CreateUser = UserForm;
+    type UpdateUser = UserForm & Pick<User, 'userId'>;
 
-    /** update user params */
-    type UpdateUser = UserForm & Pick<User, 'id'>;
+    /** The search model kept by the role search panel */
+    type RoleSearchModel = {
+      roleName: string | null;
+      roleKey: string | null;
+      status: Api.RuoYi.Status | null;
+    };
+
+    type RoleSearchParams = RoleSearchModel & {
+      pageNum: number;
+      pageSize: number;
+    };
+
+    type RoleForm = Pick<Role, 'roleName' | 'roleKey' | 'roleSort' | 'status' | 'remark'>;
+
+    type CreateRole = RoleForm;
+    type UpdateRole = RoleForm & Pick<Role, 'roleId'>;
   }
 }

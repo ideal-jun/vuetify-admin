@@ -141,15 +141,10 @@ function transformElegantRouteToVueRoute(
   }
 
   if (children?.length) {
-    const childRoutes = children.flatMap((child) =>
+    // Keep nested directories nested (RuoYi routers may be three or more levels deep).
+    vueRoute.children = children.flatMap((child) =>
       transformElegantRouteToVueRoute(child, layouts, views),
     );
-
-    if (isFirstLevelRoute(route)) {
-      vueRoute.children = childRoutes;
-    } else {
-      vueRoutes.push(...childRoutes);
-    }
   }
 
   vueRoutes.unshift(vueRoute);

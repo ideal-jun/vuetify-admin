@@ -12,6 +12,11 @@ describe('env', () => {
 
   it('provides a valid base url and auth route mode', () => {
     expect(env.baseURL.startsWith('/')).toBe(true);
-    expect(['static', 'dynamic']).toContain(env.authRouteMode);
+    expect(env.authRouteMode).toBe('dynamic');
+  });
+
+  it('provides the RuoYi service codes', () => {
+    expect(env.serviceCodes.success).toBe('200');
+    expect(env.serviceCodes.logout).toContain('401');
   });
 });

@@ -443,8 +443,6 @@ declare namespace App {
 
     /** The request instance state */
     interface RequestInstanceState {
-      /** The promise of refreshing the token */
-      refreshTokenPromise: Promise<boolean> | null;
       /** The request error message stack */
       errMsgStack: string[];
     }

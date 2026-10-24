@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, toRaw } from 'vue';
 
-import { enableStatusOptions, userGenderOptions } from '@/constants/business';
+import { enableStatusOptions } from '@/constants/business';
 import { $t } from '@/locales';
 import { jsonClone, translateOptions } from '@/utils/common';
 
@@ -14,8 +14,6 @@ const emit = defineEmits<{
 const model = defineModel<Api.SystemManage.UserSearchModel>('model', { required: true });
 
 const expanded = ref<string[]>(['search']);
-
-const genderOptions = computed(() => translateOptions(userGenderOptions));
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
@@ -71,45 +69,12 @@ function handleSearch() {
                 </VCol>
 
                 <VCol cols="12" lg="3" md="4" sm="6">
-                  <VSelect
-                    v-model="model.userGender"
-                    clearable
-                    item-title="label"
-                    item-value="value"
-                    :items="genderOptions"
-                    :label="$t('page.system.user.columns.userGender')"
-                    :placeholder="$t('page.system.user.form.userGender')"
-                    prepend-inner-icon="mdi-gender-male-female"
-                  />
-                </VCol>
-
-                <VCol cols="12" lg="3" md="4" sm="6">
                   <VTextField
-                    v-model="model.nickName"
+                    v-model="model.phonenumber"
                     clearable
-                    :label="$t('page.system.user.columns.nickName')"
-                    :placeholder="$t('page.system.user.form.nickName')"
-                    prepend-inner-icon="mdi-account-edit-outline"
-                  />
-                </VCol>
-
-                <VCol cols="12" lg="3" md="4" sm="6">
-                  <VTextField
-                    v-model="model.userPhone"
-                    clearable
-                    :label="$t('page.system.user.columns.userPhone')"
-                    :placeholder="$t('page.system.user.form.userPhone')"
+                    :label="$t('page.system.user.columns.phonenumber')"
+                    :placeholder="$t('page.system.user.form.phonenumber')"
                     prepend-inner-icon="mdi-cellphone"
-                  />
-                </VCol>
-
-                <VCol cols="12" lg="3" md="4" sm="6">
-                  <VTextField
-                    v-model="model.userEmail"
-                    clearable
-                    :label="$t('page.system.user.columns.userEmail')"
-                    :placeholder="$t('page.system.user.form.userEmail')"
-                    prepend-inner-icon="mdi-email-outline"
                   />
                 </VCol>
 

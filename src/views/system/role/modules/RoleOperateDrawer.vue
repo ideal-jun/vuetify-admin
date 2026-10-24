@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
 
 import { enableStatusOptions } from '@/constants/business';
-import { REG_ROLE_CODE } from '@/constants/reg';
 import { useFormRules, useVuetifyForm } from '@/hooks/common/form';
 import { $t } from '@/locales';
 import { fetchCreateRole, fetchUpdateRole } from '@/service/api';
@@ -41,35 +40,35 @@ const title = computed(() =>
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
 const rules = computed(() => {
-  const { createRequiredRule, createPatternRule } = useFormRules();
+  const { createRequiredRule } = useFormRules();
 
   return {
     roleName: createRequiredRule($t('form.roleName.required')),
-    roleCode: [
-      createRequiredRule($t('form.roleCode.required')),
-      createPatternRule(REG_ROLE_CODE, $t('form.roleCode.invalid')),
-    ],
+    // RuoYi role keys are free-form (the built-in ones are lowercase), the backend validates them.
+    roleKey: [createRequiredRule($t('form.roleKey.required'))],
   };
 });
 
 function createDefaultModel(): Api.SystemManage.RoleForm {
   return {
     roleName: '',
-    roleCode: '',
-    roleDesc: '',
-    status: '1',
+    roleKey: '',
+    roleSort: 1,
+    status: '0',
+    remark: '',
   };
 }
 
 function initModel() {
   if (props.operateType === 'edit' && props.rowData) {
-    const { roleName, roleCode, roleDesc, status } = props.rowData;
+    const { roleName, roleKey, roleSort, status, remark } = props.rowData;
 
     model.value = {
       roleName,
-      roleCode,
-      roleDesc,
+      roleKey,
+      roleSort,
       status,
+      remark: remark ?? '',
     };
 
     return;
@@ -92,9 +91,9 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    const payload: Api.SystemManage.RoleForm = { ...model.value };
-
     if (props.operateType === 'add') {
+      const payload: Api.SystemManage.CreateRole = { ...model.value };
+
       const { error } = await fetchCreateRole(payload);
 
       if (error) {
@@ -107,7 +106,12 @@ async function handleSubmit() {
         return;
       }
 
-      const { error } = await fetchUpdateRole({ ...payload, id: props.rowData.id });
+      const payload: Api.SystemManage.UpdateRole = {
+        ...model.value,
+        roleId: props.rowData.roleId,
+      };
+
+      const { error } = await fetchUpdateRole(payload);
 
       if (error) {
         return;
@@ -175,19 +179,27 @@ watch(visible, (value) => {
             />
 
             <VTextField
-              v-model="model.roleCode"
-              :label="$t('page.system.role.columns.roleCode')"
-              :placeholder="$t('page.system.role.form.roleCode')"
+              v-model="model.roleKey"
+              :label="$t('page.system.role.columns.roleKey')"
+              :placeholder="$t('page.system.role.form.roleKey')"
               prepend-inner-icon="mdi-identifier"
               required
-              :rules="rules.roleCode"
+              :rules="rules.roleKey"
+            />
+
+            <VTextField
+              v-model.number="model.roleSort"
+              :label="$t('page.system.role.columns.roleSort')"
+              :placeholder="$t('page.system.role.form.roleSort')"
+              prepend-inner-icon="mdi-sort-numeric-ascending"
+              type="number"
             />
 
             <VTextarea
-              v-model="model.roleDesc"
+              v-model="model.remark"
               auto-grow
-              :label="$t('page.system.role.columns.roleDesc')"
-              :placeholder="$t('page.system.role.form.roleDesc')"
+              :label="$t('page.system.role.remark')"
+              :placeholder="$t('page.system.role.form.remark')"
               rows="3"
             />
 

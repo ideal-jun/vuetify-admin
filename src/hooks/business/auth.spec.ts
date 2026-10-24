@@ -10,17 +10,24 @@ describe('useAuth', () => {
     setActivePinia(createPinia());
   });
 
-  function setup(buttons: string[], token = 'test-token') {
+  function setup(permissions: string[], token = 'test-token') {
     const authStore = useAuthStore();
 
     authStore.token = token;
-    authStore.userInfo.buttons = buttons;
+    authStore.userInfo.permissions = permissions;
 
     return useAuth();
   }
 
   it('grants every permission for the wildcard code', () => {
     const { hasAuth } = setup(['*']);
+
+    expect(hasAuth('system:user:add')).toBe(true);
+    expect(hasAuth(['anything', 'else'])).toBe(true);
+  });
+
+  it('grants every permission for the RuoYi wildcard', () => {
+    const { hasAuth } = setup(['*:*:*']);
 
     expect(hasAuth('system:user:add')).toBe(true);
     expect(hasAuth(['anything', 'else'])).toBe(true);

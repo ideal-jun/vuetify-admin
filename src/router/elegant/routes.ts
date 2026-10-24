@@ -68,9 +68,8 @@ export const generatedRoutes: ElegantConstRoute[] = [
   },
   {
     name: 'login',
-    path: '/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?',
+    path: '/login',
     component: 'layout.blank$view.login',
-    props: true,
     meta: {
       title: 'login',
       i18nKey: 'route.login',
@@ -99,7 +98,7 @@ export const generatedRoutes: ElegantConstRoute[] = [
           icon: 'mdi-menu',
           order: 1,
           keepAlive: true,
-          roles: ['R_SUPER', 'R_ADMIN'],
+          roles: ['admin'],
         },
       },
       {
@@ -112,7 +111,7 @@ export const generatedRoutes: ElegantConstRoute[] = [
           icon: 'mdi-account-multiple-outline',
           order: 2,
           keepAlive: true,
-          roles: ['R_SUPER', 'R_ADMIN'],
+          roles: ['admin'],
         },
       },
       {
@@ -125,7 +124,7 @@ export const generatedRoutes: ElegantConstRoute[] = [
           icon: 'mdi-shield-account-outline',
           order: 3,
           keepAlive: true,
-          roles: ['R_SUPER'],
+          roles: ['admin'],
         },
       },
     ],

@@ -1,12 +1,20 @@
 import { config } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import { vi } from 'vitest';
+import { createApp } from 'vue';
 import * as VuetifyComponents from 'vuetify/components';
 
 import i18n from '@/locales';
 import vuetify from '@/plugins/vuetify';
+import { resetSetupStore } from '@/store/plugins';
 
 const pinia = createPinia();
+
+pinia.use(resetSetupStore);
+
+// Vue Test Utils installs the pinia plugin on every mount, but some tests create
+// stores before mounting, so the pending plugins are installed right away.
+createApp({}).use(pinia);
 
 export { pinia };
 

@@ -5,84 +5,36 @@ import { request } from '../request';
  *
  * @param userName User name
  * @param password Password
+ * @param captcha The captcha code and uuid, sent when the captcha is enabled
  */
-export function fetchLogin(userName: string, password: string) {
-  return request<Api.Auth.LoginToken>({
+export function fetchLogin(userName: string, password: string, captcha?: Api.Auth.LoginCaptcha) {
+  return request<Api.RuoYi.LoginData>({
     url: '/auth/login',
     method: 'POST',
     data: {
-      userName,
+      username: userName,
       password,
+      code: captcha?.code ?? '',
+      uuid: captcha?.uuid ?? '',
     },
   });
 }
 
-/**
- * Send a login captcha
- *
- * @param phone The phone number
- */
-export function fetchSendCaptcha(phone: string) {
-  return request<Api.Auth.CaptchaResult>({
-    url: '/auth/sendCaptcha',
-    method: 'POST',
-    data: { phone },
+/** Get the login captcha from GET /code */
+export function fetchGetCaptcha() {
+  return request<Api.RuoYi.Captcha>({
+    url: '/code',
+    headers: { Accept: 'text/plain' },
+    withToken: false,
   });
 }
 
-/**
- * Login with a phone captcha
- *
- * @param phone The phone number
- * @param code The captcha code
- */
-export function fetchCodeLogin(phone: string, code: string) {
-  return request<Api.Auth.LoginToken>({
-    url: '/auth/codeLogin',
-    method: 'POST',
-    data: { phone, code },
-  });
-}
-
-/**
- * Request a password reset
- *
- * @param account The user name or phone number
- */
-export function fetchResetPassword(account: string) {
-  return request<Api.Auth.ResetPasswordResult>({
-    url: '/auth/resetPassword',
-    method: 'POST',
-    data: { account },
-  });
-}
-
-/** Get user info */
+/** Get the signed-in user info from GET /system/user/getInfo */
 export function fetchGetUserInfo() {
-  return request<Api.Auth.UserInfo>({ url: '/auth/getUserInfo' });
+  return request<Api.RuoYi.GetInfo>({ url: '/system/user/getInfo' });
 }
 
-/**
- * Refresh token
- *
- * @param refreshToken Refresh token
- */
-export function fetchRefreshToken(refreshToken: string) {
-  return request<Api.Auth.LoginToken>({
-    url: '/auth/refreshToken',
-    method: 'POST',
-    data: {
-      refreshToken,
-    },
-  });
-}
-
-/**
- * Return a custom backend error
- *
- * @param code Error code
- * @param msg Error message
- */
-export function fetchCustomBackendError(code: string, msg: string) {
-  return request({ url: '/auth/error', params: { code, msg } });
+/** Log out on the backend */
+export function fetchLogout() {
+  return request<null>({ url: '/auth/logout', method: 'DELETE' });
 }

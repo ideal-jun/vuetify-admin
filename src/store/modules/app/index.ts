@@ -1,4 +1,4 @@
-import { breakpointsTailwind, useBreakpoints, useEventListener } from '@vueuse/core';
+import { useBreakpoints, useEventListener } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { effectScope, nextTick, onScopeDispose, ref, watch } from 'vue';
 
@@ -7,6 +7,7 @@ import { useBoolean } from '@/hooks/common/boolean';
 import { $t, setLocale } from '@/locales';
 import { setDayjsLocale } from '@/locales/dayjs';
 import { router } from '@/router';
+import { forVuetify } from '@/theme/breakpoints';
 import { localStg } from '@/utils/storage';
 
 import { useRouteStore } from '../route';
@@ -18,7 +19,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const routeStore = useRouteStore();
   const tabStore = useTabStore();
   const scope = effectScope();
-  const breakpoints = useBreakpoints(breakpointsTailwind);
+  // Share the Vuetify thresholds so the mobile flag flips at the same width as useDisplay().
+  const breakpoints = useBreakpoints(forVuetify);
 
   const {
     bool: themeDrawerVisible,
@@ -37,7 +39,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   } = useBoolean(localStg.get('siderCollapse') === 'Y');
 
   /** Is mobile layout */
-  const isMobile = breakpoints.smaller('sm');
+  const isMobile = breakpoints.smaller('md');
 
   /**
    * Reload the page

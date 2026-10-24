@@ -20,6 +20,7 @@ export const views: Record<LastLevelRouteKey, RouteComponentInput> = {
   system_menu: () => import('@/views/system/menu/index.vue'),
   system_user: () => import('@/views/system/user/index.vue'),
   system_role: () => import('@/views/system/role/index.vue'),
+  unsupported: () => import('@/views/_builtin/unsupported/index.vue'),
 };
 
 /** The type of the lazy loaded view map */

@@ -39,7 +39,7 @@ async function handleCopy() {
 </script>
 
 <template>
-  <div class="w-full flex justify-between pa-4">
+  <div class="w-full flex justify-between p-4">
     <textarea
       ref="textareaRef"
       class="absolute -z-1 opacity-0"

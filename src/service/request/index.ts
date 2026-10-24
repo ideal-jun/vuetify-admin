@@ -2,15 +2,13 @@ import { env } from '@/env';
 import { $t } from '@/locales';
 import { getServiceBaseURL } from '@/utils/service';
 
-import { handleMockRequest } from '../mock';
-import { getAuthorization, handleExpiredRequest, showErrorMsg } from './shared';
+import { getAuthorization, showErrorMsg } from './shared';
 import type { RequestHandlers, RequestInstanceState } from './type';
 
 export const BACKEND_ERROR_CODE = 'BACKEND_ERROR';
 
 const state: RequestInstanceState = {
   errMsgStack: [],
-  refreshTokenPromise: null,
 };
 
 let handlers: RequestHandlers = {};
@@ -60,11 +58,92 @@ function createError(
   };
 }
 
-// The request pipeline intentionally keeps the backend code handling in one place.
-// eslint-disable-next-line complexity
+/**
+ * Handle a failed HTTP response
+ *
+ * A 401 means the backend rejected the credentials, so the session is reset and a single flat error is reported.
+ */
+async function handleHttpError<T>(
+  payload: unknown,
+  status: number,
+): Promise<App.Service.FlatResponseData<T>> {
+  const backendPayload = payload as Partial<App.Service.Response> | null;
+  const message = backendPayload?.msg || $t('request.serverError');
+
+  if (status === 401) {
+    await handlers.onUnauthorized?.();
+
+    showErrorMsg(state, message);
+
+    return createError(
+      String(backendPayload?.code ?? status),
+      message,
+      status,
+      backendPayload as unknown as App.Service.Response | undefined,
+    );
+  }
+
+  showErrorMsg(state, message);
+
+  return createError(BACKEND_ERROR_CODE, message, status);
+}
+
+/** Handle the backend code of a successful HTTP response */
+async function handleBackendCode<T>(
+  responseCode: string,
+  backendResponse: App.Service.Response<T>,
+  status: number | undefined,
+): Promise<App.Service.FlatResponseData<T>> {
+  // A 401 body code means the session is invalid, even when it is not listed in the logout codes.
+  if (responseCode === '401') {
+    await handlers.onUnauthorized?.();
+
+    return createError(
+      responseCode,
+      backendResponse.msg || $t('request.logoutMsg'),
+      status,
+      backendResponse,
+    );
+  }
+
+  if (env.serviceCodes.logout.includes(responseCode)) {
+    await handlers.onUnauthorized?.();
+
+    return createError(
+      responseCode,
+      backendResponse.msg || $t('request.logoutMsg'),
+      status,
+      backendResponse,
+    );
+  }
+
+  if (env.serviceCodes.modalLogout.includes(responseCode)) {
+    window.$dialog?.error({
+      title: $t('request.logoutWithModal'),
+      content: backendResponse.msg || $t('request.logoutWithModalMsg'),
+      positiveText: $t('common.confirm'),
+      maskClosable: false,
+      onPositiveClick: () => {
+        void handlers.onUnauthorized?.();
+      },
+    });
+
+    return createError(responseCode, backendResponse.msg, status, backendResponse);
+  }
+
+  showErrorMsg(state, backendResponse.msg || $t('request.serverError'));
+
+  return createError(
+    responseCode,
+    backendResponse.msg || $t('request.serverError'),
+    status,
+    backendResponse,
+  );
+}
+
+/** The request pipeline keeps the backend code handling in one place */
 async function execute<T>(
   config: App.Service.RequestConfig,
-  allowRetry = true,
 ): Promise<App.Service.FlatResponseData<T>> {
   const {
     url: _url,
@@ -101,17 +180,6 @@ async function execute<T>(
   const requestURL = getURL(config, baseURL);
 
   try {
-    // The built-in mock service keeps the template runnable without a backend.
-    if (env.isMock) {
-      const mockResponse = await handleMockRequest<T>(config);
-
-      if (mockResponse.error) {
-        showErrorMsg(state, mockResponse.error.message);
-      }
-
-      return mockResponse;
-    }
-
     const response = await fetch(requestURL, {
       ...init,
       method,
@@ -132,12 +200,7 @@ async function execute<T>(
     }
 
     if (!response.ok) {
-      const backendPayload = payload as Partial<App.Service.Response> | null;
-      const message = backendPayload?.msg || $t('request.serverError');
-
-      showErrorMsg(state, message);
-
-      return createError(BACKEND_ERROR_CODE, message, response.status);
+      return handleHttpError<T>(payload, response.status);
     }
 
     const backendResponse = payload as App.Service.Response<T> | null;
@@ -149,59 +212,14 @@ async function execute<T>(
 
     const responseCode = String(backendResponse.code);
 
-    if (responseCode === import.meta.env.VITE_SERVICE_SUCCESS_CODE) {
-      return { data: backendResponse.data, error: null, response: backendResponse };
+    if (responseCode === env.serviceCodes.success) {
+      // RuoYi returns flat payloads for getInfo and table endpoints; expose them directly as data.
+      const data = 'data' in backendResponse ? backendResponse.data : backendResponse;
+
+      return { data: data as T, error: null, response: backendResponse };
     }
 
-    const logoutCodes = import.meta.env.VITE_SERVICE_LOGOUT_CODES?.split(',') || [];
-
-    if (logoutCodes.includes(responseCode)) {
-      await handlers.onUnauthorized?.();
-
-      return createError(
-        responseCode,
-        backendResponse.msg || $t('request.logoutMsg'),
-        response.status,
-        backendResponse,
-      );
-    }
-
-    const modalLogoutCodes = import.meta.env.VITE_SERVICE_MODAL_LOGOUT_CODES?.split(',') || [];
-
-    if (modalLogoutCodes.includes(responseCode)) {
-      window.$dialog?.error({
-        title: $t('request.logoutWithModal'),
-        content: backendResponse.msg || $t('request.logoutWithModalMsg'),
-        positiveText: $t('common.confirm'),
-        maskClosable: false,
-        onPositiveClick: () => {
-          void handlers.onUnauthorized?.();
-        },
-      });
-
-      return createError(responseCode, backendResponse.msg, response.status, backendResponse);
-    }
-
-    const expiredTokenCodes = import.meta.env.VITE_SERVICE_EXPIRED_TOKEN_CODES?.split(',') || [];
-
-    if (allowRetry && expiredTokenCodes.includes(responseCode)) {
-      const success = await handleExpiredRequest(state, async () => {
-        return (await handlers.onTokenExpired?.()) ?? false;
-      });
-
-      if (success) {
-        return execute<T>(config, false);
-      }
-    }
-
-    showErrorMsg(state, backendResponse.msg || $t('request.serverError'));
-
-    return createError(
-      responseCode,
-      backendResponse.msg || $t('request.serverError'),
-      response.status,
-      backendResponse,
-    );
+    return handleBackendCode(responseCode, backendResponse, response.status);
   } catch (error) {
     const message = error instanceof Error ? error.message : $t('request.networkError');
 

@@ -8,5 +8,4 @@ export function getToken() {
 /** Clear the auth storage */
 export function clearAuthStorage() {
   localStg.remove('token');
-  localStg.remove('refreshToken');
 }

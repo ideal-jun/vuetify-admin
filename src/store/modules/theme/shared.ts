@@ -240,13 +240,18 @@ export function createVuetifyThemeColors(colors: App.Theme.ThemeColor, dark: boo
  *
  * @param colors Theme colors
  * @param dark Is dark mode
+ * @param radius Theme radius in pixels, it is exposed as the `--v-border-radius-root` CSS variable
  */
-export function createVuetifyTheme(colors: App.Theme.ThemeColor, dark: boolean) {
+export function createVuetifyTheme(
+  colors: App.Theme.ThemeColor,
+  dark: boolean,
+  radius = themeSettings.themeRadius,
+) {
   return {
     dark,
     colors: createVuetifyThemeColors(colors, dark),
     variables: {
-      'border-radius-root': '10px',
+      'border-radius-root': `${radius}px`,
     },
   };
 }

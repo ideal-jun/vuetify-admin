@@ -1,0 +1,25 @@
+{
+  "code": 200,
+  "msg": "查询成功",
+  "total": 2,
+  "rows": [
+    {
+      "roleId": 1,
+      "roleName": "超级管理员",
+      "roleKey": "admin",
+      "roleSort": 1,
+      "status": "0",
+      "remark": "超级管理员",
+      "createTime": "2026-10-24 21:13:30"
+    },
+    {
+      "roleId": 2,
+      "roleName": "普通角色",
+      "roleKey": "common",
+      "roleSort": 2,
+      "status": "0",
+      "remark": "普通角色",
+      "createTime": "2026-10-24 21:13:30"
+    }
+  ]
+}

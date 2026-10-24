@@ -3,6 +3,8 @@ import { useEventListener } from '@vueuse/core';
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
+import ButtonIcon from '@/components/custom/ButtonIcon.vue';
+import SvgIcon from '@/components/custom/SvgIcon.vue';
 import { $t } from '@/locales';
 import { useRouteStore } from '@/store/modules/route';
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import ButtonIcon from '@/components/custom/ButtonIcon.vue';
 import { $t } from '@/locales';
 
 defineOptions({ name: 'ThemeSchemaSwitch' });

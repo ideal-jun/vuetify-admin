@@ -11,6 +11,10 @@ const elevationShadows = {
   'elevation-3': 'shadow-md',
   'elevation-4': 'shadow-xl',
   'elevation-5': 'shadow-2xl',
+  'elevation-6':
+    'shadow-[0_3px_5px_-1px_rgba(0,0,0,0.2),0_6px_10px_0_rgba(0,0,0,0.14),0_1px_18px_0_rgba(0,0,0,0.12)]',
+  'elevation-8':
+    'shadow-[0_5px_5px_-3px_rgba(0,0,0,0.2),0_8px_10px_1px_rgba(0,0,0,0.14),0_3px_14px_2px_rgba(0,0,0,0.12)]',
 };
 
 export default defineConfig({
@@ -18,6 +22,11 @@ export default defineConfig({
   transformers: [transformerDirectives()],
   theme: {
     breakpoint: breakpoints.forUnoCSS,
+    radius: {
+      pill: '9999px',
+      circle: '50%',
+      shaped: 'calc(var(--v-border-radius-root, 10px) * 6) 0',
+    },
     font: {
       heading: 'Roboto, sans-serif',
       body: 'Roboto, sans-serif',
@@ -31,10 +40,11 @@ export default defineConfig({
           `rgb(var(--primary-${n}-color))`,
         ]),
       ),
-      container: 'var(--container-bg-color)',
-      layout: 'var(--layout-bg-color)',
-      inverted: 'var(--inverted-bg-color)',
-      'base-text': 'var(--base-text-color)',
+      // The theme stylesheet defines these tokens as rgb channel triplets.
+      container: 'rgb(var(--container-bg-color))',
+      layout: 'rgb(var(--layout-bg-color))',
+      inverted: 'rgb(var(--inverted-bg-color))',
+      'base-text': 'rgb(var(--base-text-color))',
     },
   },
   variants: createThemeVariants(['light', 'dark']),
@@ -54,6 +64,7 @@ export default defineConfig({
     ...elevationShadows,
     'app-card':
       'bg-gray-200 dark:bg-black dark:bg-linear-to-r dark:from-primary/50 dark:to-primary/30 dark:text-white/80',
+    'app-panel': 'bg-container',
     'app-shadow-header': 'shadow-[var(--header-box-shadow)]',
     'app-shadow-sider': 'shadow-[var(--sider-box-shadow)]',
     'app-shadow-tab': 'shadow-[var(--tab-box-shadow)]',

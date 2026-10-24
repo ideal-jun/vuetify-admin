@@ -1,0 +1,27 @@
+{
+  "code": 200,
+  "msg": "操作成功",
+  "permissions": ["*:*:*"],
+  "roles": ["admin"],
+  "user": {
+    "userId": 1,
+    "userName": "admin",
+    "nickName": "若依",
+    "email": "ry@163.com",
+    "phonenumber": "15888888888",
+    "sex": "1",
+    "avatar": null,
+    "status": "0",
+    "dept": {
+      "deptId": 103,
+      "deptName": "研发部门"
+    },
+    "roles": [
+      {
+        "roleId": 1,
+        "roleName": "超级管理员",
+        "roleKey": "admin"
+      }
+    ]
+  }
+}

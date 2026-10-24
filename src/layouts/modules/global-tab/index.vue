@@ -3,6 +3,9 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import PageTab from '@/components/advanced/page-tab/index.vue';
+import ReloadButton from '@/components/common/ReloadButton.vue';
+import ButtonIcon from '@/components/custom/ButtonIcon.vue';
+import SvgIcon from '@/components/custom/SvgIcon.vue';
 import { GLOBAL_TAB_WHEEL_SPEED_RATIO } from '@/constants/app';
 import { $t } from '@/locales';
 import { useAppStore } from '@/store/modules/app';

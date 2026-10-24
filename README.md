@@ -1,36 +1,34 @@
 # vuetify-admin
 
 A typed Vue 3 + Vuetify admin starter with a clean, layered architecture inspired by
-[soybean-admin](https://github.com/soybeanjs/soybean-admin) and adapted to Vuetify 4, UnoCSS and a fetch-based service layer.
+[soybean-admin](https://github.com/soybeanjs/soybean-admin) and adapted to Vuetify 4, UnoCSS and a fetch-based service
+layer. The application is wired to a [RuoYi-Cloud](https://gitee.com/y_project/RuoYi-Cloud) backend.
 
 ## ✨ Features
 
 - Vue 3 + Vite 8 + TypeScript 6 + Vuetify 4
+- RuoYi-Cloud backend: captcha login and user/role/menu management with native RuoYi fields
+- Dynamic routes, menus and tabs generated from RuoYi `GET /system/menu/getRouters` (unsupported pages render a placeholder)
+- Typed service layer with flat `{ data, error }` responses
 - Dynamic light / dark theme built from typed theme settings and CSS tokens
 - Pinia setup stores with a `$reset` plugin
 - Vue Router 5 route-key map, layout wrappers and typed route meta
 - Vue I18n locale schema derived from the English messages
-- Typed service layer with flat `{ data, error }` responses and a built-in mock backend
-- Password and phone-code login, remember-me, password reset request and button-level permissions
 - Recursive sidebar menu with native Vuetify rail collapse and six layout modes
 - Theme drawer, global search, tab bar with three styles, breadcrumb, watermark and presets
-- Home dashboard loaded from a `/home/overview` service endpoint
-- Vitest unit tests plus full app-mount integration tests
+- Home dashboard composed from real RuoYi counts
+- Vitest unit, mapping, page and app-mount tests with stubbed services
 - Oxlint + ESLint + Oxfmt with layer-boundary import rules
 
-## 🧭 Demo accounts
+## 🧭 Demo account
 
-The mock service is enabled by default (`VITE_SERVICE_MOCK=Y`), so no backend is required.
+The login page uses the RuoYi gateway captcha:
 
-| Account   | Password | Phone         | Roles                | Button permissions                     |
-| --------- | -------- | ------------- | -------------------- | -------------------------------------- |
-| `admin`   | `123456` | `13800000001` | `R_SUPER`, `R_ADMIN` | `*`                                    |
-| `Soybean` | `123456` | `13800000002` | `R_ADMIN`            | user/menu view + add + edit, no delete |
-| `User`    | `123456` | `13800000003` | `R_USER`             | menu view                              |
+| Account | Password   | Role    |
+| ------- | ---------- | ------- |
+| `admin` | `admin123` | `admin` |
 
-Phone-code login uses the demo code `123456`. The code must be requested first from the login page.
-
-The home page is a constant route. System pages require login and are filtered by role.
+The backend services must be running (see [`docs/ruoyi-cloud.md`](docs/ruoyi-cloud.md)).
 
 ## 🚀 Quick start
 
@@ -39,11 +37,14 @@ pnpm install
 pnpm dev
 ```
 
+`.env` contains the local RuoYi defaults (gateway at `http://127.0.0.1:8888` through the Vite `/api` proxy).
+Override machine-specific values in `.env.local` (git ignored); `.env.example` documents the full set.
+
 ```bash
 pnpm build        # type-check + production build
 pnpm preview      # preview the production build
 pnpm check        # format check + lint + type-check + tests
-pnpm test         # run the Vitest suite
+pnpm test         # run the Vitest suite (services are stubbed, no backend needed)
 pnpm test:coverage
 ```
 
@@ -59,9 +60,9 @@ src/
 ├─ locales/          langs/en-us, langs/zh-cn, i18n entry and dayjs locale
 ├─ plugins/          vuetify, feedback, request, dayjs, loading, nprogress
 ├─ router/           route-key, elegant, routes and guard
-├─ service/          api, mock and request
+├─ service/          api and request
 ├─ store/            app, auth, menu, route, tab and theme modules + reset plugin
-├─ styles/           reset, global, transitions, nprogress and Vuetify SCSS settings
+├─ styles/           global, transitions, nprogress and Vuetify SCSS settings
 ├─ theme/            settings, tokens, breakpoints and json presets
 ├─ typings/          App / Api / CommonType / UnionKey ambient types
 ├─ utils/            color, storage, service, icon and common helpers
@@ -70,36 +71,51 @@ src/
 
 ## 🧱 Architecture notes
 
-### Route keys
+### Routing
 
-`src/router/route-key.ts` is the single source of truth for route names and paths. Route meta is typed in
-`src/typings/router.d.ts` (i18n key, roles, keep-alive, icon, tab options, ...).
+`src/router/route-key.ts` holds the constant routes (root, home, login, error pages, iframe) and the three system pages;
+route meta is typed in `src/typings/router.d.ts`.
 
-`src/router/elegant/` follows elegant-router's shape: routes declare component strings such as
-`layout.base$view.home` and `transform.ts` resolves them to real lazy components.
+The default `VITE_AUTH_ROUTE_MODE=dynamic` loads the signed-in user's menu tree from RuoYi
+`GET /system/menu/getRouters` after login. `src/router/ruoyi.ts` transforms the tree into the elegant route
+declarations consumed by the route store:
+
+- `Layout` becomes the base layout wrapper; `ParentView` directories keep their nesting (three or more levels).
+- `system/user|role|menu/index` map to the template views; the other RuoYi pages are registered with the
+  `unsupported` placeholder so the backend menu is complete.
+- external links become `/external/...` routes with `meta.href` and open in a new tab.
+- `hidden`, `noCache` and order are mapped to `hideInMenu`, `keepAlive` and menu ordering.
+
+The static mode (`VITE_AUTH_ROUTE_MODE=static`) is still available for template development without a backend.
 
 ### Stores
 
 - `app` — locale, mobile state, sider, reload flag and theme drawer
 - `theme` — settings, CSS tokens, Vuetify theme sync and watermark
-- `auth` — token, user info, roles, login and refresh
+- `auth` — token, user info, roles, captcha login and logout
 - `route` — constant/auth routes, menus, breadcrumbs, search menus and keep-alive cache
 - `tab` — tabs, pinning and context-menu operations
-- `menu` — the business menu tree used by menu management
+- `menu` — the business menu tree loaded from `/system/menu/list`
 
 ### Service layer
 
 `src/service/request/index.ts` returns a flat `{ data, error }` result instead of throwing. It supports backend
-success/logout/refresh codes, authorization headers, a single-flight refresh flow, deduplicated error messages and a
-complete mock backend for auth, routes, the home overview and user/role/menu management.
+success/logout codes, authorization headers, 401 session handling and deduplicated error messages.
 
-The service directory cannot import stores or components. Auth side effects are injected with
-`setupRequestHandlers` from `src/plugins/request.ts`.
+The service layer consumes the RuoYi shapes directly: flat `{ total, rows }` tables, status `0/1`, sex `0/1/2`,
+permission codes such as `system:user:remove`, menu types `M/C/F` and the flat menu list. The request layer exposes
+flat RuoYi payloads as `data`, so the stores and views read the backend fields without an intermediate mapping layer.
+
+Backend response codes (`VITE_SERVICE_SUCCESS_CODE`, `VITE_SERVICE_LOGOUT_CODES`, ...) are parsed and validated once
+in `src/env.ts`, so a misconfigured environment fails at startup instead of silently turning successful responses into
+errors. The service directory cannot import stores, components or router runtime code. Auth side effects are injected
+with `setupRequestHandlers` from `src/plugins/request.ts`.
 
 ### Theme system
 
 Theme settings are typed, persisted in production, copyable/resettable from the drawer, expanded into a 50–950 palette,
-written to CSS variables and synchronized with Vuetify's theme instance. Presets live in `src/theme/preset/*.json`.
+written to CSS variables and synchronized with Vuetify's theme instance, including the component border radius.
+Presets live in `src/theme/preset/*.json`.
 
 ### File naming
 
@@ -108,34 +124,61 @@ allowed by the linter. `src/views/_builtin` keeps soybean-admin's private-folder
 
 ## 🔧 Configuration
 
-| Variable                           | Description                                  |
-| ---------------------------------- | -------------------------------------------- |
-| `VITE_APP_TITLE`                   | Application title                            |
-| `VITE_ROUTER_HISTORY_MODE`         | `history`, `hash` or `memory`                |
-| `VITE_AUTH_ROUTE_MODE`             | `static` or `dynamic`                        |
-| `VITE_ROUTE_HOME`                  | Home route key                               |
-| `VITE_SERVICE_BASE_URL`            | Backend base URL                             |
-| `VITE_SERVICE_MOCK`                | `Y` for the mock backend, `N` for a real API |
-| `VITE_SERVICE_SUCCESS_CODE`        | Backend success code                         |
-| `VITE_SERVICE_LOGOUT_CODES`        | Codes that force a logout                    |
-| `VITE_SERVICE_EXPIRED_TOKEN_CODES` | Codes that trigger a token refresh           |
-| `VITE_STORAGE_PREFIX`              | Prefix for local/session storage keys        |
+The routing flags and backend service codes are validated in `src/env.ts` at startup. The committed `.env` contains
+working local defaults; put machine-local overrides in `.env.local`.
 
-To use a real backend, set `VITE_SERVICE_MOCK=N` and implement the endpoints under `src/service/api/`. The expected
-response shape is:
+| Variable                                | Description                                                        |
+| --------------------------------------- | ------------------------------------------------------------------ |
+| `VITE_APP_TITLE`                        | Application title (also injected into `index.html`)                |
+| `VITE_APP_DESC`                         | Application description (injected into `index.html`)               |
+| `VITE_BASE_URL`                         | Router base path                                                   |
+| `VITE_ROUTER_HISTORY_MODE`              | `history`, `hash` or `memory`                                      |
+| `VITE_AUTH_ROUTE_MODE`                  | `dynamic` (RuoYi menu tree) or `static`                            |
+| `VITE_ROUTE_HOME`                       | Home route key                                                     |
+| `VITE_SERVICE_BASE_URL`                 | Backend base URL (proxied by the dev server)                       |
+| `VITE_HTTP_PROXY` / `VITE_PROXY_TARGET` | Proxy `/api` to the RuoYi gateway in development                   |
+| `VITE_SERVICE_SUCCESS_CODE`             | Backend success code (`200` for RuoYi)                             |
+| `VITE_SERVICE_LOGOUT_CODES`             | Codes that force a logout                                          |
+| `VITE_SERVICE_MODAL_LOGOUT_CODES`       | Codes that show a logout confirmation modal                        |
+| `VITE_SERVICE_EXPIRED_TOKEN_CODES`      | Codes that trigger a token refresh                                 |
+| `VITE_STATIC_SUPER_ROLE`                | Super role that bypasses role checks (static route mode)           |
+| `VITE_STORAGE_PREFIX`                   | Prefix for local/session storage keys                              |
+| `VITE_DEFAULT_USER_PASSWORD`            | Initial password used by the create-user form (default `admin123`) |
+
+The RuoYi response shape expected by the request layer is:
 
 ```ts
 {
-  code: '0000';
+  code: 200;
   msg: string;
   data: T;
 }
 ```
 
+## 🐘 RuoYi-Cloud backend
+
+Start the backend services (Nacos, MySQL, Redis, gateway, auth and system), then run `pnpm dev` and log in with
+`admin` / `admin123`. The login form shows the gateway captcha; the sidebar, breadcrumb and tabs are generated from
+`/system/menu/getRouters`, and the system pages call the RuoYi `/system/*` APIs.
+
+The gateway is expected on `127.0.0.1:8888` because the Nacos console uses `8080`; change
+`VITE_PROXY_TARGET` / `VITE_SERVICE_BASE_URL` if your layout differs.
+
+See [`docs/ruoyi-cloud.md`](docs/ruoyi-cloud.md) for the full backend setup, the API mapping table and the known
+limitations (static routes, unsupported filters, role user counts, default create values).
+
 ## 🧪 Tests
 
-The suite covers environment validation, color/storage utilities, menu and route stores, route transformation, tab
-helpers, layout menu mapping, button permissions, home data hydration, the mock backend and an app mount of the home page.
+The suite covers environment validation, color/storage utilities, the menu store, tab helpers, route transformation,
+layout menu mapping, button permissions, the Vuetify locale adapter, the RuoYi menu-tree transformer (`getRouters`),
+page-level tests for user, role and menu management (RuoYi response fixtures under `src/test/fixtures/ruoyi/`) and an
+app-mount integration test that also navigates the dynamic routes. Service modules are stubbed in tests, so the suite
+runs without a backend.
+
+## ✅ Quality gate
+
+`pnpm check` runs the Oxfmt format check, Oxlint + ESLint, `vue-tsc` and Vitest. Line endings are enforced as LF by
+`.gitattributes`, so Windows checkouts do not need extra configuration.
 
 ## 📄 License
 

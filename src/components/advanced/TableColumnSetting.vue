@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
+import ButtonIcon from '@/components/custom/ButtonIcon.vue';
+import SvgIcon from '@/components/custom/SvgIcon.vue';
 import type { TableColumnCheck } from '@/hooks/common/table';
 import { $t } from '@/locales';
 

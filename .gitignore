@@ -15,7 +15,7 @@ coverage
 *.local
 
 # Local environment overrides
-.env
+.env.local
 .env.*.local
 
 # Editor directories and files

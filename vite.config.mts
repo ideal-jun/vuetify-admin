@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
       }),
       Components({
         dirs: ['src/components'],
-        dts: false,
+        dts: 'src/typings/components.d.ts',
         deep: true,
         extensions: ['vue'],
       }),
