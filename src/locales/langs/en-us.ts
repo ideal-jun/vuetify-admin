@@ -32,6 +32,7 @@ export default {
   },
   common: {
     action: 'Action',
+    dateRange: 'Date range',
     add: 'Add',
     addSuccess: 'Added successfully',
     backToHome: 'Back to home',

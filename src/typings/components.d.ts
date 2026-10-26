@@ -16,6 +16,7 @@ declare module 'vue' {
     ChromeTabBg: typeof import('./../components/advanced/page-tab/ChromeTabBg.vue')['default']
     CountTo: typeof import('./../components/custom/CountTo.vue')['default']
     DarkModeContainer: typeof import('./../components/common/DarkModeContainer.vue')['default']
+    DateRangeField: typeof import('./../components/advanced/DateRangeField.vue')['default']
     ErrorBoundary: typeof import('./../components/common/ErrorBoundary.vue')['default']
     ExceptionBase: typeof import('./../components/common/ExceptionBase.vue')['default']
     FullScreen: typeof import('./../components/common/FullScreen.vue')['default']

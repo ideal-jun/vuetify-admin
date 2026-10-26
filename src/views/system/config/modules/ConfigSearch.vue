@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, toRaw } from 'vue';
 
+import DateRangeField from '@/components/advanced/DateRangeField.vue';
 import { $t } from '@/locales';
 import { jsonClone } from '@/utils/common';
 
@@ -89,24 +90,8 @@ function handleSearch() {
                   />
                 </VCol>
 
-                <VCol cols="12" lg="2" md="4" sm="6">
-                  <VTextField
-                    v-model="model.beginTime"
-                    clearable
-                    :label="$t('page.config.search.beginTime')"
-                    prepend-inner-icon="mdi-calendar-start"
-                    type="date"
-                  />
-                </VCol>
-
-                <VCol cols="12" lg="2" md="4" sm="6">
-                  <VTextField
-                    v-model="model.endTime"
-                    clearable
-                    :label="$t('page.config.search.endTime')"
-                    prepend-inner-icon="mdi-calendar-end"
-                    type="date"
-                  />
+                <VCol cols="12" lg="4" md="4" sm="6">
+                  <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
                 </VCol>
 
                 <VCol class="flex flex-wrap items-end justify-end gap-2" cols="12" lg="2">

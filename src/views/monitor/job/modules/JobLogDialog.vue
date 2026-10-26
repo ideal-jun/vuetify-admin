@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue';
 
+import DateRangeField from '@/components/advanced/DateRangeField.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import { $t } from '@/locales';
@@ -280,20 +281,10 @@ watch(
                   :placeholder="$t('page.job.log.search.statusPlaceholder')"
                 />
               </VCol>
-              <VCol cols="12" md="2" sm="6">
-                <VTextField
-                  v-model="searchParams.beginTime"
-                  clearable
-                  :label="$t('page.job.log.search.beginTime')"
-                  type="date"
-                />
-              </VCol>
-              <VCol cols="12" md="2" sm="6">
-                <VTextField
-                  v-model="searchParams.endTime"
-                  clearable
-                  :label="$t('page.job.log.search.endTime')"
-                  type="date"
+              <VCol cols="12" md="4" sm="6">
+                <DateRangeField
+                  v-model:begin="searchParams.beginTime"
+                  v-model:end="searchParams.endTime"
                 />
               </VCol>
               <VCol class="flex items-end justify-end gap-2" cols="12" md="1">
