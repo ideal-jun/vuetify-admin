@@ -41,7 +41,6 @@ const to = computed(() => getFirstLeafPath(props.item) ?? props.item.routePath);
         v-bind="activatorProps"
         :active="active"
         :aria-label="item.label"
-        class="app-menu-item"
         :prepend-icon="item.icon"
         rounded="lg"
         :title="item.label"
@@ -61,7 +60,6 @@ const to = computed(() => getFirstLeafPath(props.item) ?? props.item.routePath);
     v-else
     :active="active"
     :aria-label="item.label"
-    class="app-menu-item"
     :prepend-icon="item.icon"
     rounded="lg"
     :title="item.label"

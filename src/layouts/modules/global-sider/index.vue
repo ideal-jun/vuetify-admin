@@ -57,6 +57,7 @@ watch(isMobile, (value, oldValue) => {
 <template>
   <VNavigationDrawer
     v-model="open"
+    expand-on-hover
     :order="order"
     :permanent="!isMobile"
     :rail="rail"

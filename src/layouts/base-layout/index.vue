@@ -90,13 +90,12 @@ watch(tabVisible, (visible) => {
       :width="themeStore.sider.mixWidth + themeStore.sider.mixChildMenuWidth"
     >
       <div class="mix-sider">
-        <div class="mix-sider__rail" :style="{ width: `${mixRailWidth}px` }">
+        <div :style="{ width: `${mixRailWidth}px` }">
           <GlobalMenu :items="layoutConfig.railMenus" rail />
         </div>
 
         <div
           v-if="!appStore.siderCollapse"
-          class="mix-sider__panel"
           :style="{ width: `${themeStore.sider.mixChildMenuWidth}px` }"
         >
           <GlobalMenu :items="layoutConfig.siderMenus" />
@@ -105,6 +104,7 @@ watch(tabVisible, (visible) => {
     </GlobalSider>
 
     <VAppBar
+      :extended="tabVisible"
       :extension-height="tabVisible ? themeStore.tab.height : 0"
       :flat="appStore.fullContent"
       :height="appStore.fullContent ? 0 : themeStore.header.height"
@@ -138,23 +138,4 @@ watch(tabVisible, (visible) => {
   </VApp>
 </template>
 
-<style scoped>
-.mix-sider {
-  display: flex;
-  height: 100%;
-  overflow: hidden;
-}
-
-.mix-sider__rail {
-  flex: none;
-  height: 100%;
-  overflow: hidden;
-}
-
-.mix-sider__panel {
-  flex: none;
-  height: 100%;
-  overflow-y: auto;
-  border-inline-start: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-</style>
+<style scoped></style>
