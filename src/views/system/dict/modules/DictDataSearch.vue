@@ -33,7 +33,7 @@ function handleSearch() {
 
 <template>
   <VForm class="px-4 py-3" @submit.prevent="handleSearch">
-    <VRow density="compact">
+    <VRow class="filter-row" density="compact">
       <VCol cols="12" sm="5">
         <VTextField
           v-model="model.dictLabel"
@@ -61,7 +61,7 @@ function handleSearch() {
         />
       </VCol>
 
-      <VCol class="flex items-center justify-end gap-2" cols="12" sm="3">
+      <VCol class="filter-actions flex items-center justify-end gap-2" cols="12" sm="3">
         <VBtn prepend-icon="mdi-refresh" size="small" variant="text" @click="handleReset">
           {{ $t('common.reset') }}
         </VBtn>

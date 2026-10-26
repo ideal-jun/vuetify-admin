@@ -12,3 +12,17 @@
   position: fixed;
   inset: 0;
 }
+
+/* Search panels: at most five filters per row, actions on their own right-aligned row */
+.filter-row > .filter-actions {
+  flex: 0 0 100% !important;
+  justify-content: flex-end;
+  max-width: 100% !important;
+}
+
+@media (min-width: 1280px) {
+  .filter-row > .v-col:not(.filter-actions) {
+    flex: 0 0 20% !important;
+    max-width: 20% !important;
+  }
+}

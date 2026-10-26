@@ -42,7 +42,7 @@ function handleSearch() {
 </script>
 
 <template>
-  <VRow density="compact">
+  <VRow class="filter-row" density="compact">
     <VCol cols="12" lg="3" md="4" sm="6">
       <VTextField
         v-model="model.title"
@@ -97,7 +97,7 @@ function handleSearch() {
       <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
     </VCol>
 
-    <VCol class="flex items-center justify-end gap-2" cols="12" lg="6">
+    <VCol class="filter-actions flex items-center justify-end gap-2" cols="12" lg="6">
       <VBtn prepend-icon="mdi-refresh" size="small" variant="text" @click="handleReset">
         {{ $t('common.reset') }}
       </VBtn>

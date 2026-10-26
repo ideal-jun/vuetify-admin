@@ -250,7 +250,7 @@ watch(
           }"
         >
           <VForm @submit.prevent="handleSearch">
-            <VRow density="compact">
+            <VRow class="filter-row" density="compact">
               <VCol cols="12" md="3" sm="6">
                 <VTextField
                   v-model="searchParams.jobName"
@@ -287,7 +287,7 @@ watch(
                   v-model:end="searchParams.endTime"
                 />
               </VCol>
-              <VCol class="flex items-end justify-end gap-2" cols="12" md="1">
+              <VCol class="filter-actions flex items-end justify-end gap-2" cols="12" md="1">
                 <VBtn icon="mdi-magnify" size="small" type="submit" variant="text" />
               </VCol>
             </VRow>
