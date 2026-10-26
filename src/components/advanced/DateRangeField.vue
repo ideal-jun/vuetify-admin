@@ -68,6 +68,7 @@ const endDate = computed<unknown>({
       hide-details
       :label="beginLabel"
       prepend-icon=""
+      :prepend-inner-icon="'mdi-calendar-start'"
       variant="outlined"
     />
 
@@ -79,6 +80,7 @@ const endDate = computed<unknown>({
       hide-details
       :label="endLabel"
       prepend-icon=""
+      :prepend-inner-icon="'mdi-calendar-end'"
       variant="outlined"
     />
   </div>
