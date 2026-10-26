@@ -287,227 +287,241 @@ function handleDeleteData(item: Api.SystemDict.DictData) {
 </script>
 
 <template>
-  <div class="flex min-h-[70vh] flex-col gap-4 lg:h-full lg:min-h-0 lg:flex-row">
-    <VCard class="app-panel flex shrink-0 flex-col overflow-hidden lg:w-[520px]" variant="flat">
-      <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
-        <span class="text-base font-700">{{ $t('page.dict.type.title') }}</span>
+  <div class="flex flex-col gap-4">
+    <VRow class="min-h-[70vh] lg:h-full lg:min-h-0" dense>
+      <VCol class="d-flex flex-column min-h-0" cols="12" lg="6">
+        <VCard class="app-panel flex min-h-0 flex-1 flex-col overflow-hidden" variant="flat">
+          <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
+            <span class="text-base font-700">{{ $t('page.dict.type.title') }}</span>
 
-        <div class="flex items-center gap-1">
-          <VBtn
-            v-if="canAdd"
-            color="primary"
-            prepend-icon="mdi-plus"
-            rounded="lg"
-            size="small"
-            @click="handleTypeAdd"
-          >
-            {{ $t('page.dict.type.add') }}
-          </VBtn>
+            <div class="flex items-center gap-1">
+              <VBtn
+                v-if="canAdd"
+                color="primary"
+                prepend-icon="mdi-plus"
+                rounded="lg"
+                size="small"
+                @click="handleTypeAdd"
+              >
+                {{ $t('page.dict.type.add') }}
+              </VBtn>
 
-          <VBtn
-            v-if="canDelete"
-            :aria-label="$t('page.dict.type.refreshCache')"
-            icon="mdi-refresh"
-            :loading="cacheLoading"
-            size="small"
-            variant="text"
-            @click="handleRefreshCache"
-          >
-            <VIcon icon="mdi-refresh" />
-            <VTooltip activator="parent" location="bottom">
-              {{ $t('page.dict.type.refreshCache') }}
-            </VTooltip>
-          </VBtn>
-        </div>
-      </div>
-
-      <VDivider />
-
-      <DictTypeSearch v-model:model="typeSearch" @search="handleTypeSearch" />
-
-      <VDivider />
-
-      <VDataTableServer
-        v-model:items-per-page="typePage.itemsPerPage"
-        v-model:page="typePage.page"
-        class="min-h-0 flex-1"
-        density="comfortable"
-        fixed-header
-        :headers="typeHeaders"
-        :hide-default-footer="typeTotal === 0"
-        hover
-        item-value="dictId"
-        :items="typeList"
-        :items-length="typeTotal"
-        :items-per-page-options="pageSizeOptions"
-        :loading="typeLoading"
-        :no-data-text="$t('page.dict.type.empty')"
-        :row-props="typeRowProps"
-      >
-        <template #item.dictName="{ item }">
-          <span class="font-500">{{ item.dictName }}</span>
-        </template>
-
-        <template #item.dictType="{ item }">
-          <VCode class="text-xs">{{ item.dictType }}</VCode>
-        </template>
-
-        <template #item.status="{ item }">
-          <VChip :color="item.status === '0' ? 'success' : 'warning'" size="small" variant="tonal">
-            {{ $t(enableStatusRecord[item.status]) }}
-          </VChip>
-        </template>
-
-        <template #item.actions="{ item }">
-          <VBtn
-            v-if="canEdit"
-            :aria-label="$t('common.edit')"
-            icon="mdi-pencil-outline"
-            size="small"
-            variant="text"
-            @click.stop="handleTypeEdit(item.dictId)"
-          />
-          <VBtn
-            v-if="canDelete"
-            :aria-label="$t('common.delete')"
-            color="error"
-            icon="mdi-delete-outline"
-            size="small"
-            variant="text"
-            @click.stop="handleDeleteType(item)"
-          />
-        </template>
-
-        <template #no-data>
-          <div class="py-10 text-center">
-            <VIcon class="opacity-20" icon="mdi-book-open-variant" size="48" />
-            <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.type.empty') }}</div>
+              <VBtn
+                v-if="canDelete"
+                :aria-label="$t('page.dict.type.refreshCache')"
+                icon="mdi-refresh"
+                :loading="cacheLoading"
+                size="small"
+                variant="text"
+                @click="handleRefreshCache"
+              >
+                <VIcon icon="mdi-refresh" />
+                <VTooltip activator="parent" location="bottom">
+                  {{ $t('page.dict.type.refreshCache') }}
+                </VTooltip>
+              </VBtn>
+            </div>
           </div>
-        </template>
-      </VDataTableServer>
-    </VCard>
 
-    <VCard class="app-panel flex min-w-0 flex-1 flex-col overflow-hidden" variant="flat">
-      <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
-        <div class="min-w-0 flex items-center gap-2">
-          <span class="text-base font-700">{{ $t('page.dict.data.title') }}</span>
+          <VDivider />
 
-          <VChip v-if="selectedType" color="primary" size="small" variant="tonal">
-            {{ selectedTypeLabel }}
-          </VChip>
-        </div>
+          <DictTypeSearch v-model:model="typeSearch" @search="handleTypeSearch" />
 
-        <div class="flex items-center gap-1">
-          <VBtn
-            v-if="canAdd"
-            color="primary"
+          <VDivider />
+
+          <VDataTableServer
+            v-model:items-per-page="typePage.itemsPerPage"
+            v-model:page="typePage.page"
+            class="min-h-0 flex-1"
+            density="comfortable"
+            fixed-header
+            :headers="typeHeaders"
+            :hide-default-footer="typeTotal === 0"
+            hover
+            item-value="dictId"
+            :items="typeList"
+            :items-length="typeTotal"
+            :items-per-page-options="pageSizeOptions"
+            :loading="typeLoading"
+            :no-data-text="$t('page.dict.type.empty')"
+            :row-props="typeRowProps"
+          >
+            <template #item.dictName="{ item }">
+              <span class="font-500">{{ item.dictName }}</span>
+            </template>
+
+            <template #item.dictType="{ item }">
+              <VCode class="text-xs">{{ item.dictType }}</VCode>
+            </template>
+
+            <template #item.status="{ item }">
+              <VChip
+                :color="item.status === '0' ? 'success' : 'warning'"
+                size="small"
+                variant="tonal"
+              >
+                {{ $t(enableStatusRecord[item.status]) }}
+              </VChip>
+            </template>
+
+            <template #item.actions="{ item }">
+              <VBtn
+                v-if="canEdit"
+                :aria-label="$t('common.edit')"
+                icon="mdi-pencil-outline"
+                size="small"
+                variant="text"
+                @click.stop="handleTypeEdit(item.dictId)"
+              />
+              <VBtn
+                v-if="canDelete"
+                :aria-label="$t('common.delete')"
+                color="error"
+                icon="mdi-delete-outline"
+                size="small"
+                variant="text"
+                @click.stop="handleDeleteType(item)"
+              />
+            </template>
+
+            <template #no-data>
+              <div class="py-10 text-center">
+                <VIcon class="opacity-20" icon="mdi-book-open-variant" size="48" />
+                <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.type.empty') }}</div>
+              </div>
+            </template>
+          </VDataTableServer>
+        </VCard>
+      </VCol>
+
+      <VCol class="d-flex flex-column min-h-0" cols="12" lg="6">
+        <VCard class="app-panel flex min-h-0 flex-1 flex-col overflow-hidden" variant="flat">
+          <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
+            <div class="min-w-0 flex items-center gap-2">
+              <span class="text-base font-700">{{ $t('page.dict.data.title') }}</span>
+
+              <VChip v-if="selectedType" color="primary" size="small" variant="tonal">
+                {{ selectedTypeLabel }}
+              </VChip>
+            </div>
+
+            <div class="flex items-center gap-1">
+              <VBtn
+                v-if="canAdd"
+                color="primary"
+                :disabled="!selectedType"
+                prepend-icon="mdi-plus"
+                rounded="lg"
+                size="small"
+                @click="handleDataAdd"
+              >
+                {{ $t('page.dict.data.add') }}
+              </VBtn>
+
+              <VBtn
+                :aria-label="$t('common.refresh')"
+                icon="mdi-refresh"
+                size="small"
+                variant="text"
+                @click="handleDataSearch"
+              />
+            </div>
+          </div>
+
+          <VDivider />
+
+          <DictDataSearch
+            v-model:model="dataSearch"
             :disabled="!selectedType"
-            prepend-icon="mdi-plus"
-            rounded="lg"
-            size="small"
-            @click="handleDataAdd"
-          >
-            {{ $t('page.dict.data.add') }}
-          </VBtn>
-
-          <VBtn
-            :aria-label="$t('common.refresh')"
-            icon="mdi-refresh"
-            size="small"
-            variant="text"
-            @click="handleDataSearch"
+            @search="handleDataSearch"
           />
-        </div>
-      </div>
 
-      <VDivider />
+          <VDivider />
 
-      <DictDataSearch
-        v-model:model="dataSearch"
-        :disabled="!selectedType"
-        @search="handleDataSearch"
-      />
-
-      <VDivider />
-
-      <div v-if="!selectedType" class="min-h-0 flex flex-1 items-center justify-center p-8">
-        <div class="text-center">
-          <VIcon class="opacity-20" icon="mdi-cursor-default-click-outline" size="52" />
-          <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.type.selectHint') }}</div>
-        </div>
-      </div>
-
-      <VDataTableServer
-        v-else
-        v-model:items-per-page="dataPage.itemsPerPage"
-        v-model:page="dataPage.page"
-        class="min-h-0 flex-1"
-        density="comfortable"
-        fixed-header
-        :headers="dataHeaders"
-        :hide-default-footer="dataTotal === 0"
-        hover
-        item-value="dictCode"
-        :items="dataList"
-        :items-length="dataTotal"
-        :items-per-page-options="pageSizeOptions"
-        :loading="dataLoading"
-        :no-data-text="$t('page.dict.data.empty')"
-      >
-        <template #item.dictLabel="{ item }">
-          <VChip
-            v-if="item.listClass && item.listClass !== 'default'"
-            :color="item.listClass"
-            size="small"
-            variant="tonal"
-          >
-            {{ item.dictLabel }}
-          </VChip>
-          <span v-else class="font-500">{{ item.dictLabel }}</span>
-        </template>
-
-        <template #item.dictValue="{ item }">
-          <VCode class="text-xs">{{ item.dictValue }}</VCode>
-        </template>
-
-        <template #item.dictSort="{ item }">
-          <span class="text-xs opacity-60">{{ item.dictSort }}</span>
-        </template>
-
-        <template #item.status="{ item }">
-          <VChip :color="item.status === '0' ? 'success' : 'warning'" size="small" variant="tonal">
-            {{ $t(enableStatusRecord[item.status]) }}
-          </VChip>
-        </template>
-
-        <template #item.actions="{ item }">
-          <VBtn
-            v-if="canEdit"
-            :aria-label="$t('common.edit')"
-            icon="mdi-pencil-outline"
-            size="small"
-            variant="text"
-            @click="handleDataEdit(item.dictCode)"
-          />
-          <VBtn
-            v-if="canDelete"
-            :aria-label="$t('common.delete')"
-            color="error"
-            icon="mdi-delete-outline"
-            size="small"
-            variant="text"
-            @click="handleDeleteData(item)"
-          />
-        </template>
-
-        <template #no-data>
-          <div class="py-10 text-center">
-            <VIcon class="opacity-20" icon="mdi-book-open-page-variant-outline" size="48" />
-            <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.data.empty') }}</div>
+          <div v-if="!selectedType" class="min-h-0 flex flex-1 items-center justify-center p-8">
+            <div class="text-center">
+              <VIcon class="opacity-20" icon="mdi-cursor-default-click-outline" size="52" />
+              <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.type.selectHint') }}</div>
+            </div>
           </div>
-        </template>
-      </VDataTableServer>
-    </VCard>
+
+          <VDataTableServer
+            v-else
+            v-model:items-per-page="dataPage.itemsPerPage"
+            v-model:page="dataPage.page"
+            class="min-h-0 flex-1"
+            density="comfortable"
+            fixed-header
+            :headers="dataHeaders"
+            :hide-default-footer="dataTotal === 0"
+            hover
+            item-value="dictCode"
+            :items="dataList"
+            :items-length="dataTotal"
+            :items-per-page-options="pageSizeOptions"
+            :loading="dataLoading"
+            :no-data-text="$t('page.dict.data.empty')"
+          >
+            <template #item.dictLabel="{ item }">
+              <VChip
+                v-if="item.listClass && item.listClass !== 'default'"
+                :color="item.listClass"
+                size="small"
+                variant="tonal"
+              >
+                {{ item.dictLabel }}
+              </VChip>
+              <span v-else class="font-500">{{ item.dictLabel }}</span>
+            </template>
+
+            <template #item.dictValue="{ item }">
+              <VCode class="text-xs">{{ item.dictValue }}</VCode>
+            </template>
+
+            <template #item.dictSort="{ item }">
+              <span class="text-xs opacity-60">{{ item.dictSort }}</span>
+            </template>
+
+            <template #item.status="{ item }">
+              <VChip
+                :color="item.status === '0' ? 'success' : 'warning'"
+                size="small"
+                variant="tonal"
+              >
+                {{ $t(enableStatusRecord[item.status]) }}
+              </VChip>
+            </template>
+
+            <template #item.actions="{ item }">
+              <VBtn
+                v-if="canEdit"
+                :aria-label="$t('common.edit')"
+                icon="mdi-pencil-outline"
+                size="small"
+                variant="text"
+                @click="handleDataEdit(item.dictCode)"
+              />
+              <VBtn
+                v-if="canDelete"
+                :aria-label="$t('common.delete')"
+                color="error"
+                icon="mdi-delete-outline"
+                size="small"
+                variant="text"
+                @click="handleDeleteData(item)"
+              />
+            </template>
+
+            <template #no-data>
+              <div class="py-10 text-center">
+                <VIcon class="opacity-20" icon="mdi-book-open-page-variant-outline" size="48" />
+                <div class="mt-2 text-sm opacity-50">{{ $t('page.dict.data.empty') }}</div>
+              </div>
+            </template>
+          </VDataTableServer>
+        </VCard>
+      </VCol>
+    </VRow>
 
     <DictTypeOperateDrawer
       v-model:visible="typeDrawerVisible"
