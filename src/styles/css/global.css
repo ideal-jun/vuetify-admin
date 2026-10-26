@@ -7,9 +7,8 @@
   white-space: nowrap;
 }
 
-.user-operate-drawer + .v-navigation-drawer__scrim,
-.role-operate-drawer + .v-navigation-drawer__scrim,
-.menu-operate-drawer + .v-navigation-drawer__scrim {
+/* Vuetify places the temporary drawer scrim inside the scroll container; cover the whole viewport instead */
+.v-navigation-drawer__scrim {
   position: fixed;
   inset: 0;
 }
