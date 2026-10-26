@@ -289,8 +289,8 @@ function handleDeleteData(item: Api.SystemDict.DictData) {
 <template>
   <div class="flex flex-col gap-4">
     <VRow class="min-h-[70vh] lg:h-full lg:min-h-0" dense>
-      <VCol class="d-flex flex-column min-h-0" cols="12" lg="6">
-        <VCard class="app-panel flex min-h-0 flex-1 flex-col overflow-hidden" variant="flat">
+      <VCol cols="12" lg="6">
+        <VCard class="app-panel flex h-full min-h-0 flex-col overflow-hidden" variant="flat">
           <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
             <span class="text-base font-700">{{ $t('page.dict.type.title') }}</span>
 
@@ -394,8 +394,8 @@ function handleDeleteData(item: Api.SystemDict.DictData) {
         </VCard>
       </VCol>
 
-      <VCol class="d-flex flex-column min-h-0" cols="12" lg="6">
-        <VCard class="app-panel flex min-h-0 flex-1 flex-col overflow-hidden" variant="flat">
+      <VCol cols="12" lg="6">
+        <VCard class="app-panel flex h-full min-h-0 flex-col overflow-hidden" variant="flat">
           <div class="flex shrink-0 items-center justify-between gap-2 px-4 py-3">
             <div class="min-w-0 flex items-center gap-2">
               <span class="text-base font-700">{{ $t('page.dict.data.title') }}</span>
