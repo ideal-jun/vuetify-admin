@@ -281,7 +281,7 @@ watch(
                   :placeholder="$t('page.job.log.search.statusPlaceholder')"
                 />
               </VCol>
-              <VCol cols="12" md="4" sm="6">
+              <VCol class="filter-date" cols="12" md="6" sm="12">
                 <DateRangeField
                   v-model:begin="searchParams.beginTime"
                   v-model:end="searchParams.endTime"

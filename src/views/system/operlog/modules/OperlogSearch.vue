@@ -93,7 +93,7 @@ function handleSearch() {
       />
     </VCol>
 
-    <VCol cols="12" lg="4" md="4" sm="6">
+    <VCol class="filter-date" cols="12" lg="4" md="8" sm="12">
       <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
     </VCol>
 
