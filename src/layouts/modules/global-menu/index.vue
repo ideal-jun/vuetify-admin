@@ -55,7 +55,9 @@ watch(
     :class="{ 'app-menu--rail': rail }"
     color="primary"
     :density="rail || compact ? 'compact' : 'default'"
+    :indent="24"
     nav
+    :prepend-gap="12"
   >
     <GlobalMenuItem
       v-for="item in menus"
