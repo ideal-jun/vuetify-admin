@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 
 import { $t } from '@/locales';
 
@@ -7,13 +7,16 @@ defineOptions({ name: 'DateRangeField' });
 
 const props = withDefaults(
   defineProps<{
-    /** Override the field label */
-    label?: string;
+    /** Override the start date label */
+    beginLabel?: string;
+    /** Override the end date label */
+    endLabel?: string;
     /** The text field density */
     density?: 'default' | 'comfortable' | 'compact';
   }>(),
   {
-    label: undefined,
+    beginLabel: undefined,
+    endLabel: undefined,
     density: 'compact',
   },
 );
@@ -21,22 +24,8 @@ const props = withDefaults(
 const begin = defineModel<string | null>('begin', { default: null });
 const end = defineModel<string | null>('end', { default: null });
 
-const menu = ref(false);
-const pickerValue = ref<Date[] | null>(null);
-
-const displayValue = computed(() => {
-  if (begin.value && end.value) {
-    return `${begin.value} ~ ${end.value}`;
-  }
-
-  return begin.value ?? end.value ?? '';
-});
-
-const label = computed(() => props.label ?? $t('common.dateRange'));
-
-function toDate(value: string | null) {
-  return value ? new Date(`${value}T00:00:00`) : null;
-}
+const beginLabel = computed(() => props.beginLabel ?? $t('common.startDate'));
+const endLabel = computed(() => props.endLabel ?? $t('common.endDate'));
 
 function formatDate(value: unknown) {
   if (value instanceof Date) {
@@ -51,82 +40,44 @@ function formatDate(value: unknown) {
     return value.slice(0, 10);
   }
 
-  return '';
+  return null;
 }
 
-function syncPicker() {
-  const dates: Date[] = [];
-  const beginDate = toDate(begin.value);
-  const endDate = toDate(end.value);
+const beginDate = computed<unknown>({
+  get: () => begin.value,
+  set: (value: unknown) => {
+    begin.value = formatDate(value);
+  },
+});
 
-  if (beginDate) {
-    dates.push(beginDate);
-  }
-
-  if (endDate) {
-    dates.push(endDate);
-  }
-
-  pickerValue.value = dates.length > 0 ? dates : null;
-}
-
-watch([begin, end], syncPicker, { immediate: true });
-
-function handlePickerUpdate(value: unknown) {
-  const dates = Array.isArray(value) ? value : [];
-
-  if (dates.length < 2) {
-    return;
-  }
-
-  const beginDate = formatDate(dates[0]);
-  const endDate = formatDate(dates[1]);
-
-  if (!beginDate || !endDate) {
-    return;
-  }
-
-  begin.value = beginDate;
-  end.value = endDate;
-  menu.value = false;
-}
-
-function clearRange() {
-  begin.value = null;
-  end.value = null;
-  pickerValue.value = null;
-}
+const endDate = computed<unknown>({
+  get: () => end.value,
+  set: (value: unknown) => {
+    end.value = formatDate(value);
+  },
+});
 </script>
 
 <template>
-  <VMenu
-    v-model="menu"
-    :close-on-content-click="false"
-    location="bottom start"
-    :min-width="320"
-    offset="6"
-  >
-    <template #activator="{ props: activatorProps }">
-      <VTextField
-        v-bind="activatorProps"
-        clearable
-        :density="density"
-        hide-details
-        :label="label"
-        :model-value="displayValue"
-        :prepend-inner-icon="'mdi-calendar-range'"
-        readonly
-        @click:clear="clearRange"
-      />
-    </template>
-
-    <VDatePicker
-      v-model="pickerValue"
-      color="primary"
-      first-day-of-week="1"
-      multiple="range"
-      show-adjacent-months
-      @update:model-value="handlePickerUpdate"
+  <div class="flex flex-col gap-2 sm:flex-row">
+    <VDateInput
+      v-model="beginDate"
+      class="min-w-0 flex-1"
+      clearable
+      :density="density"
+      hide-details
+      :label="beginLabel"
+      :prepend-inner-icon="'mdi-calendar-start'"
     />
-  </VMenu>
+
+    <VDateInput
+      v-model="endDate"
+      class="min-w-0 flex-1"
+      clearable
+      :density="density"
+      hide-details
+      :label="endLabel"
+      :prepend-inner-icon="'mdi-calendar-end'"
+    />
+  </div>
 </template>
