@@ -52,11 +52,16 @@ watch(isMobile, (value, oldValue) => {
     appStore.setSiderCollapse(false);
   }
 });
+
+function railChanged(value: boolean) {
+  console.log('===========================', value);
+}
 </script>
 
 <template>
   <VNavigationDrawer
     v-model="open"
+    expand-on-hover
     :order="order"
     :permanent="!isMobile"
     :rail="rail"
@@ -64,6 +69,7 @@ watch(isMobile, (value, oldValue) => {
     :temporary="isMobile"
     :theme="themeStore.sider.inverted ? 'dark' : undefined"
     :width="width"
+    @update:rail="(val) => railChanged(val)"
   >
     <template v-if="showLogo" #prepend>
       <GlobalLogo class="w-full" :show-title="!rail" />

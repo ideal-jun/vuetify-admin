@@ -51,11 +51,9 @@ watch(
 <template>
   <VList
     v-model:opened="opened"
-    class="app-menu"
-    :class="{ 'app-menu--rail': rail }"
     color="primary"
     :density="rail || compact ? 'compact' : 'default'"
-    :indent="24"
+    :indent="32"
     nav
     :prepend-gap="12"
   >
@@ -69,14 +67,4 @@ watch(
   </VList>
 </template>
 
-<style scoped>
-.app-menu--rail :deep(.v-list-item) {
-  justify-content: center;
-  padding-inline: 0;
-}
-
-.app-menu--rail :deep(.v-list-item-title),
-.app-menu--rail :deep(.v-list-group__header__append-icon) {
-  display: none;
-}
-</style>
+<style scoped></style>
