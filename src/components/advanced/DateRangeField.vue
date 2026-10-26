@@ -68,6 +68,7 @@ const endDate = computed<unknown>({
       hide-details
       :label="beginLabel"
       :prepend-inner-icon="'mdi-calendar-start'"
+      variant="outlined"
     />
 
     <VDateInput
@@ -78,6 +79,7 @@ const endDate = computed<unknown>({
       hide-details
       :label="endLabel"
       :prepend-inner-icon="'mdi-calendar-end'"
+      variant="outlined"
     />
   </div>
 </template>
