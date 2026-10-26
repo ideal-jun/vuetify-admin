@@ -67,6 +67,7 @@ const endDate = computed<unknown>({
       :density="density"
       hide-details
       :label="beginLabel"
+      prepend-icon=""
       variant="outlined"
     />
 
@@ -77,6 +78,7 @@ const endDate = computed<unknown>({
       :density="density"
       hide-details
       :label="endLabel"
+      prepend-icon=""
       variant="outlined"
     />
   </div>
