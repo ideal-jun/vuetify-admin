@@ -12,32 +12,3 @@
   position: fixed;
   inset: 0;
 }
-
-/* Search panels: at most five filters per row, actions on their own right-aligned row */
-.filter-row > .filter-actions {
-  flex: 0 0 100% !important;
-  justify-content: flex-end;
-  max-width: 100% !important;
-}
-
-@media (min-width: 1280px) {
-  /* Five equal filter columns; a start/end date pair occupies two of them */
-  .filter-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .filter-row > .v-col {
-    flex: none;
-    max-width: none !important;
-    width: 100%;
-  }
-
-  .filter-row > .v-col.filter-date {
-    grid-column: span 2;
-  }
-
-  .filter-row > .filter-actions {
-    grid-column: 1 / -1;
-  }
-}

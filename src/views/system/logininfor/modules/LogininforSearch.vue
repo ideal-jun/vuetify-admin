@@ -32,8 +32,8 @@ function handleSearch() {
 </script>
 
 <template>
-  <VRow class="filter-row" density="compact">
-    <VCol cols="12" lg="3" md="4" sm="6">
+  <VRow density="compact">
+    <VCol cols="12" lg="2" md="4" sm="6">
       <VTextField
         v-model="model.userName"
         clearable
@@ -44,7 +44,7 @@ function handleSearch() {
       />
     </VCol>
 
-    <VCol cols="12" lg="3" md="4" sm="6">
+    <VCol cols="12" lg="2" md="4" sm="6">
       <VTextField
         v-model="model.ipaddr"
         clearable
@@ -69,11 +69,11 @@ function handleSearch() {
       />
     </VCol>
 
-    <VCol class="filter-date" cols="12" lg="4" md="8" sm="12">
+    <VCol cols="12" lg="4" md="8" sm="12">
       <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
     </VCol>
 
-    <VCol class="filter-actions flex items-center justify-end gap-2" cols="12" lg="8">
+    <VCol class="filter-actions flex items-center justify-end gap-2" cols="12">
       <VBtn prepend-icon="mdi-refresh" size="small" variant="text" @click="handleReset">
         {{ $t('common.reset') }}
       </VBtn>

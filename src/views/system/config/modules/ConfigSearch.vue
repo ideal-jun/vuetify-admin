@@ -56,7 +56,7 @@ function handleSearch() {
 
           <VExpansionPanelText>
             <VForm @submit.prevent="handleSearch">
-              <VRow class="filter-row" density="compact">
+              <VRow density="compact">
                 <VCol cols="12" lg="2" md="4" sm="6">
                   <VTextField
                     v-model="model.configName"
@@ -90,15 +90,11 @@ function handleSearch() {
                   />
                 </VCol>
 
-                <VCol class="filter-date" cols="12" lg="4" md="8" sm="12">
+                <VCol cols="12" lg="4" md="8" sm="12">
                   <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
                 </VCol>
 
-                <VCol
-                  class="filter-actions flex flex-wrap items-end justify-end gap-2"
-                  cols="12"
-                  lg="2"
-                >
+                <VCol class="filter-actions flex flex-wrap items-end justify-end gap-2" cols="12">
                   <VBtn prepend-icon="mdi-refresh" variant="text" @click="handleReset">
                     {{ $t('common.reset') }}
                   </VBtn>

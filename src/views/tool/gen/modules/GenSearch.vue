@@ -50,8 +50,8 @@ function handleSearch() {
 
           <VExpansionPanelText>
             <VForm @submit.prevent="handleSearch">
-              <VRow class="filter-row" density="compact">
-                <VCol cols="12" lg="3" md="4" sm="6">
+              <VRow density="compact">
+                <VCol cols="12" lg="2" md="4" sm="6">
                   <VTextField
                     v-model="model.tableName"
                     clearable
@@ -61,7 +61,7 @@ function handleSearch() {
                   />
                 </VCol>
 
-                <VCol cols="12" lg="3" md="4" sm="6">
+                <VCol cols="12" lg="2" md="4" sm="6">
                   <VTextField
                     v-model="model.tableComment"
                     clearable
@@ -71,11 +71,7 @@ function handleSearch() {
                   />
                 </VCol>
 
-                <VCol
-                  class="filter-actions flex flex-wrap items-end justify-end gap-2"
-                  cols="12"
-                  lg="6"
-                >
+                <VCol class="filter-actions flex flex-wrap items-end justify-end gap-2" cols="12">
                   <VBtn prepend-icon="mdi-refresh" variant="text" @click="handleReset">
                     {{ $t('common.reset') }}
                   </VBtn>

@@ -250,8 +250,8 @@ watch(
           }"
         >
           <VForm @submit.prevent="handleSearch">
-            <VRow class="filter-row" density="compact">
-              <VCol cols="12" md="3" sm="6">
+            <VRow density="compact">
+              <VCol cols="12" lg="2" md="4" sm="6">
                 <VTextField
                   v-model="searchParams.jobName"
                   clearable
@@ -259,7 +259,7 @@ watch(
                   :placeholder="$t('page.job.log.search.jobNamePlaceholder')"
                 />
               </VCol>
-              <VCol cols="12" md="2" sm="6">
+              <VCol cols="12" lg="2" md="4" sm="6">
                 <VSelect
                   v-model="searchParams.jobGroup"
                   clearable
@@ -270,7 +270,7 @@ watch(
                   :placeholder="$t('page.job.log.search.jobGroupPlaceholder')"
                 />
               </VCol>
-              <VCol cols="12" md="2" sm="6">
+              <VCol cols="12" lg="2" md="4" sm="6">
                 <VSelect
                   v-model="searchParams.status"
                   clearable
@@ -281,13 +281,13 @@ watch(
                   :placeholder="$t('page.job.log.search.statusPlaceholder')"
                 />
               </VCol>
-              <VCol class="filter-date" cols="12" md="6" sm="12">
+              <VCol cols="12" lg="4" md="8" sm="12">
                 <DateRangeField
                   v-model:begin="searchParams.beginTime"
                   v-model:end="searchParams.endTime"
                 />
               </VCol>
-              <VCol class="filter-actions flex items-end justify-end gap-2" cols="12" md="1">
+              <VCol class="filter-actions flex items-end justify-end gap-2" cols="12">
                 <VBtn icon="mdi-magnify" size="small" type="submit" variant="text" />
               </VCol>
             </VRow>
