@@ -67,7 +67,6 @@ const endDate = computed<unknown>({
       :density="density"
       hide-details
       :label="beginLabel"
-      :prepend-inner-icon="'mdi-calendar-start'"
       variant="outlined"
     />
 
@@ -78,7 +77,6 @@ const endDate = computed<unknown>({
       :density="density"
       hide-details
       :label="endLabel"
-      :prepend-inner-icon="'mdi-calendar-end'"
       variant="outlined"
     />
   </div>
