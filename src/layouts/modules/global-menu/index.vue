@@ -46,24 +46,37 @@ watch(
   },
   { immediate: true },
 );
-
-function railChange(bool) {
-  console.log('---------------------------', bool);
-}
 </script>
 
 <template>
   <VList
     v-model:opened="opened"
+    class="app-menu"
+    :class="{ 'app-menu--rail': rail }"
     color="primary"
-    density="compact"
-    :indent="32"
+    :density="rail || compact ? 'compact' : 'default'"
+    :indent="24"
     nav
     :prepend-gap="12"
-    @update:expanded="railChange"
   >
-    <GlobalMenuItem v-for="item in menus" :key="item.key" :depth="0" :item="item" />
+    <GlobalMenuItem
+      v-for="item in menus"
+      :key="item.key"
+      :depth="0"
+      :item="item"
+      :max-depth="effectiveMaxDepth"
+    />
   </VList>
 </template>
 
-<style scoped></style>
+<style scoped>
+.app-menu--rail :deep(.v-list-item) {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.app-menu--rail :deep(.v-list-item-title),
+.app-menu--rail :deep(.v-list-group__header__append-icon) {
+  display: none;
+}
+</style>

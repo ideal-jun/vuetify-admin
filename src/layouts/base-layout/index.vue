@@ -90,12 +90,13 @@ watch(tabVisible, (visible) => {
       :width="themeStore.sider.mixWidth + themeStore.sider.mixChildMenuWidth"
     >
       <div class="mix-sider">
-        <div :style="{ width: `${mixRailWidth}px` }">
+        <div class="mix-sider__rail" :style="{ width: `${mixRailWidth}px` }">
           <GlobalMenu :items="layoutConfig.railMenus" rail />
         </div>
 
         <div
           v-if="!appStore.siderCollapse"
+          class="mix-sider__panel"
           :style="{ width: `${themeStore.sider.mixChildMenuWidth}px` }"
         >
           <GlobalMenu :items="layoutConfig.siderMenus" />
@@ -138,4 +139,23 @@ watch(tabVisible, (visible) => {
   </VApp>
 </template>
 
-<style scoped></style>
+<style scoped>
+.mix-sider {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mix-sider__rail {
+  flex: none;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mix-sider__panel {
+  flex: none;
+  height: 100%;
+  overflow-y: auto;
+  border-inline-start: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+</style>
