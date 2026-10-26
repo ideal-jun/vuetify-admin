@@ -1,7 +1,12 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
+import {
+  fetchCreateUser,
+  fetchGetAllRoles,
+  fetchGetDeptList,
+  fetchGetUserList,
+} from '@/service/api';
 import { setupTestAuth } from '@/test/auth';
 import roleOptionFixture from '@/test/fixtures/backend/role-option.json';
 import userListFixture from '@/test/fixtures/backend/user-list.json';
@@ -10,9 +15,11 @@ import SystemUser from '@/views/system/user/index.vue';
 
 vi.mock('@/service/api', () => ({
   fetchBatchDeleteUser: vi.fn(),
+  fetchChangeUserStatus: vi.fn(),
   fetchCreateUser: vi.fn(),
   fetchDeleteUser: vi.fn(),
   fetchGetAllRoles: vi.fn(),
+  fetchGetDeptList: vi.fn(),
   fetchGetUserList: vi.fn(),
   fetchUpdateUser: vi.fn(),
 }));
@@ -42,6 +49,7 @@ beforeEach(() => {
   }));
 
   getAllRolesMock.mockResolvedValue({ data: structuredClone(allRoles), error: null });
+  vi.mocked(fetchGetDeptList).mockResolvedValue({ data: [], error: null });
 
   createUserMock.mockImplementation(async (payload) => {
     users = [
@@ -71,18 +79,18 @@ function mountPage() {
 }
 
 describe('user management page', () => {
-  it('renders the backend user table with sex, status and department fields', async () => {
+  it('renders the backend user table with id, status and department fields', async () => {
     const wrapper = mountPage();
 
     await waitForText(wrapper, '第 1-2 条，共 2 条');
 
     expect(wrapper.text()).toContain('用户列表');
+    expect(wrapper.text()).toContain('用户编号');
     expect(wrapper.text()).toContain('admin');
     expect(wrapper.text()).toContain('若依');
     expect(wrapper.text()).toContain('研发部门');
     expect(wrapper.text()).toContain('15888888888');
-    expect(wrapper.text()).toContain('女');
-    expect(wrapper.text()).toContain('正常');
+    expect(wrapper.findAll('tbody .v-switch')).toHaveLength(2);
     expect(wrapper.findAll('tbody tr')).toHaveLength(2);
 
     wrapper.unmount();
@@ -98,7 +106,7 @@ describe('user management page', () => {
 
     await waitForText(wrapper, '第 1-2 条，共 2 条');
 
-    expect(wrapper.findAll('button[aria-label="删除"]')).toHaveLength(0);
+    expect(wrapper.findAll('button').some((button) => button.text().trim() === '删除')).toBe(false);
     expect(wrapper.findAll('button').some((button) => button.text().trim() === '新增')).toBe(true);
 
     wrapper.unmount();

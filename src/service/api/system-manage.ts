@@ -52,6 +52,16 @@ export function fetchUpdateUser(data: Api.SystemManage.UpdateUser) {
  *
  * @param userId The user id
  */
+/** Change the enabled/disabled status of a user */
+export function fetchChangeUserStatus(data: { userId: number; status: Api.Backend.Status }) {
+  return request<null>({ url: '/system/user/changeStatus', method: 'PUT', data });
+}
+
+/** Reset a user's password */
+export function fetchResetUserPwd(data: { userId: number; password: string }) {
+  return request<null>({ url: '/system/user/resetPwd', method: 'PUT', data });
+}
+
 export function fetchDeleteUser(userId: number) {
   return request<null>({ url: `/system/user/${userId}`, method: 'DELETE' });
 }

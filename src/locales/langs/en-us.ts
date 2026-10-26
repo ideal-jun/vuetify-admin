@@ -444,12 +444,15 @@ export default {
         selectedCount: '{count} selected',
         confirmBatchDelete: 'Are you sure you want to delete the {count} selected users?',
         email: 'Email',
+        deptSearch: 'Search department',
+        allDepts: 'All departments',
         sex: {
           male: 'Male',
           female: 'Female',
           unknown: 'Unknown',
         },
         columns: {
+          userId: 'User ID',
           userName: 'User name',
           nickName: 'Nick name',
           dept: 'Department',

@@ -4,29 +4,31 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
 import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
-import { enableStatusRecord, permissionCodes, userSexRecord } from '@/constants/business';
+import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
 import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchBatchDeleteUser,
+  fetchChangeUserStatus,
   fetchDeleteUser,
   fetchGetAllRoles,
   fetchGetUserList,
 } from '@/service/api';
 
+import UserDeptTree from './modules/UserDeptTree.vue';
 import UserOperateDrawer from './modules/UserOperateDrawer.vue';
 import UserSearch from './modules/UserSearch.vue';
 
 defineOptions({ name: 'SystemUser' });
 
 type UserColumnKey =
+  | 'userId'
   | 'userName'
   | 'nickName'
   | 'dept'
   | 'phonenumber'
-  | 'sex'
   | 'status'
   | 'createTime'
   | 'actions';
@@ -48,10 +50,14 @@ function createDefaultSearchModel(): Api.SystemManage.UserSearchModel {
     userName: null,
     phonenumber: null,
     status: null,
+    beginTime: null,
+    endTime: null,
   };
 }
 
 const searchParams = ref<Api.SystemManage.UserSearchModel>(createDefaultSearchModel());
+
+const selectedDeptId = ref<number | null>(null);
 
 const tableOptions = reactive({
   page: 1,
@@ -70,8 +76,13 @@ async function loadUsers() {
 
   loading.value = true;
 
+  const { beginTime, endTime, ...rest } = searchParams.value;
+
   const { data: userList, error } = await fetchGetUserList({
-    ...searchParams.value,
+    ...rest,
+    ...(selectedDeptId.value === null ? {} : { deptId: selectedDeptId.value }),
+    ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
+    ...(endTime ? { 'params[endTime]': endTime } : {}),
     pageNum: tableOptions.page,
     pageSize: tableOptions.itemsPerPage,
   });
@@ -106,53 +117,53 @@ const roleOptions = ref<CommonType.Option<number>[]>([]);
 
 const baseHeaders = computed<UserTableHeader[]>(() => [
   {
+    key: 'userId',
+    title: $t('page.system.user.columns.userId'),
+    width: 60,
+    align: 'center',
+    sortable: false,
+  },
+  {
     key: 'userName',
     title: $t('page.system.user.columns.userName'),
-    minWidth: 180,
+    width: 110,
     sortable: false,
   },
   {
     key: 'nickName',
     title: $t('page.system.user.columns.nickName'),
-    minWidth: 140,
+    width: 90,
     sortable: false,
   },
   {
     key: 'dept',
     title: $t('page.system.user.columns.dept'),
-    minWidth: 140,
+    width: 90,
     sortable: false,
   },
   {
     key: 'phonenumber',
     title: $t('page.system.user.columns.phonenumber'),
-    minWidth: 150,
-    sortable: false,
-  },
-  {
-    key: 'sex',
-    title: $t('page.system.user.columns.sex'),
-    width: 90,
-    align: 'center',
+    width: 110,
     sortable: false,
   },
   {
     key: 'status',
     title: $t('page.system.user.columns.status'),
-    width: 100,
+    width: 70,
     align: 'center',
     sortable: false,
   },
   {
     key: 'createTime',
     title: $t('page.system.user.columns.createTime'),
-    width: 180,
+    width: 140,
     sortable: false,
   },
   {
     key: 'actions',
     title: $t('page.system.user.columns.actions'),
-    width: 120,
+    width: 100,
     align: 'center',
     sortable: false,
     fixed: 'end',
@@ -175,6 +186,27 @@ const visibleHeaders = computed(() =>
 function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
+
+async function handleStatusChange(user: Api.SystemManage.User, enabled: boolean) {
+  const status = enabled ? '0' : '1';
+
+  const { error } = await fetchChangeUserStatus({ userId: user.userId, status });
+
+  if (error) {
+    refreshKey.value += 1;
+
+    return;
+  }
+
+  window.$message?.success($t('common.updateSuccess'));
+  refreshKey.value += 1;
+}
+
+watch(selectedDeptId, () => {
+  tableOptions.page = 1;
+  checkedRowKeys.value = [];
+  refreshKey.value += 1;
+});
 
 async function loadRoles() {
   const { data: roleList, error } = await fetchGetAllRoles();
@@ -275,140 +307,130 @@ onMounted(() => {
 </script>
 
 <template>
-  <TablePageLayout :title="$t('page.system.user.listTitle')">
-    <template #search>
-      <UserSearch v-model:model="searchParams" @search="handleSearch" />
-    </template>
+  <div class="flex min-h-[70vh] flex-col gap-4 lg:h-full lg:min-h-0 lg:flex-row">
+    <div class="flex min-h-0 shrink-0 flex-col lg:w-[220px]">
+      <UserDeptTree v-model:selected-dept-id="selectedDeptId" />
+    </div>
 
-    <template #actions>
-      <TableHeaderOperation
-        :can-batch-delete="canDelete"
-        :loading="loading"
-        :show-add="canAdd"
-        :show-batch-delete="checkedRowKeys.length > 0"
-        @add="handleAdd"
-        @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
-      >
-        <template #prefix>
-          <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
-            {{ $t('page.system.user.selectedCount', { count: checkedRowKeys.length }) }}
-          </VChip>
+    <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+      <TablePageLayout :title="$t('page.system.user.listTitle')">
+        <template #search>
+          <UserSearch v-model:model="searchParams" @search="handleSearch" />
         </template>
 
-        <TableColumnSetting :checks="columnChecks" @update:checks="updateColumnChecks" />
-      </TableHeaderOperation>
-    </template>
-
-    <template #table>
-      <VDataTableServer
-        v-model="checkedRowKeys"
-        v-model:items-per-page="tableOptions.itemsPerPage"
-        v-model:page="tableOptions.page"
-        class="min-h-0 flex-1"
-        density="comfortable"
-        fixed-header
-        :headers="visibleHeaders"
-        :hide-default-footer="total === 0"
-        hover
-        item-value="userId"
-        :items="data"
-        :items-length="total"
-        :items-per-page-options="pageSizeOptions"
-        :loading="loading"
-        :no-data-text="$t('page.system.user.empty')"
-        select-strategy="page"
-        show-current-page
-        show-select
-      >
-        <template #item.userName="{ item }">
-          <div class="flex items-center gap-2.5">
-            <VAvatar color="primary" size="32" variant="tonal">
-              <span class="text-xs font-700">
-                {{ item.userName.slice(0, 1).toUpperCase() }}
-              </span>
-            </VAvatar>
-            <span class="font-500">{{ item.userName }}</span>
-          </div>
-        </template>
-
-        <template #item.nickName="{ item }">
-          <span class="text-sm">{{ item.nickName || '—' }}</span>
-        </template>
-
-        <template #item.dept="{ item }">
-          <span class="text-sm">{{ item.dept?.deptName || '—' }}</span>
-        </template>
-
-        <template #item.phonenumber="{ item }">
-          <span class="text-xs">{{ item.phonenumber || '—' }}</span>
-        </template>
-
-        <template #item.sex="{ item }">
-          <VChip
-            v-if="item.sex"
-            :color="item.sex === '0' ? 'primary' : item.sex === '1' ? 'error' : 'default'"
-            size="small"
-            variant="tonal"
+        <template #actions>
+          <TableHeaderOperation
+            :can-batch-delete="canDelete"
+            :loading="loading"
+            :show-add="canAdd"
+            :show-batch-delete="checkedRowKeys.length > 0"
+            @add="handleAdd"
+            @batch-delete="handleBatchDelete"
+            @refresh="handleRefresh"
           >
-            {{ $t(userSexRecord[item.sex]) }}
-          </VChip>
-          <span v-else class="opacity-40">—</span>
+            <template #prefix>
+              <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
+                {{ $t('page.system.user.selectedCount', { count: checkedRowKeys.length }) }}
+              </VChip>
+            </template>
+
+            <TableColumnSetting :checks="columnChecks" @update:checks="updateColumnChecks" />
+          </TableHeaderOperation>
         </template>
 
-        <template #item.status="{ item }">
-          <VChip
-            v-if="item.status"
-            :color="item.status === '0' ? 'success' : 'warning'"
-            size="small"
-            variant="tonal"
+        <template #table>
+          <VDataTableServer
+            v-model="checkedRowKeys"
+            v-model:items-per-page="tableOptions.itemsPerPage"
+            v-model:page="tableOptions.page"
+            class="min-h-0 flex-1"
+            density="comfortable"
+            fixed-header
+            :headers="visibleHeaders"
+            :hide-default-footer="total === 0"
+            hover
+            item-value="userId"
+            :items="data"
+            :items-length="total"
+            :items-per-page-options="pageSizeOptions"
+            :loading="loading"
+            :no-data-text="$t('page.system.user.empty')"
+            select-strategy="page"
+            show-current-page
+            show-select
           >
-            {{ $t(enableStatusRecord[item.status]) }}
-          </VChip>
-          <span v-else class="opacity-40">—</span>
+            <template #item.userName="{ item }">
+              <div class="flex items-center gap-2.5">
+                <VAvatar color="primary" size="32" variant="tonal">
+                  <span class="text-xs font-700">
+                    {{ item.userName.slice(0, 1).toUpperCase() }}
+                  </span>
+                </VAvatar>
+                <span class="font-500">{{ item.userName }}</span>
+              </div>
+            </template>
+
+            <template #item.nickName="{ item }">
+              <span class="text-sm">{{ item.nickName || '—' }}</span>
+            </template>
+
+            <template #item.dept="{ item }">
+              <span class="text-sm">{{ item.dept?.deptName || '—' }}</span>
+            </template>
+
+            <template #item.phonenumber="{ item }">
+              <span class="text-xs">{{ item.phonenumber || '—' }}</span>
+            </template>
+
+            <template #item.status="{ item }">
+              <VSwitch
+                color="primary"
+                density="compact"
+                :disabled="item.userId === 1"
+                hide-details
+                :model-value="item.status === '0'"
+                @update:model-value="(value) => handleStatusChange(item, Boolean(value))"
+              />
+            </template>
+
+            <template #item.createTime="{ item }">
+              <span class="text-xs opacity-60">{{ item.createTime || '—' }}</span>
+            </template>
+
+            <template #item.actions="{ item }">
+              <VBtn v-if="canEdit" size="small" variant="text" @click="handleEdit(item.userId)">
+                {{ $t('common.edit') }}
+              </VBtn>
+              <VBtn
+                v-if="canDelete"
+                color="error"
+                size="small"
+                variant="text"
+                @click="handleDelete(item)"
+              >
+                {{ $t('common.delete') }}
+              </VBtn>
+            </template>
+
+            <template #no-data>
+              <div class="py-12 text-center">
+                <VIcon class="opacity-20" icon="mdi-account-search-outline" size="52" />
+                <div class="mt-2 text-sm opacity-50">{{ $t('page.system.user.empty') }}</div>
+              </div>
+            </template>
+          </VDataTableServer>
         </template>
 
-        <template #item.createTime="{ item }">
-          <span class="text-xs opacity-60">{{ item.createTime || '—' }}</span>
-        </template>
-
-        <template #item.actions="{ item }">
-          <VBtn
-            v-if="canEdit"
-            :aria-label="$t('common.edit')"
-            icon="mdi-pencil-outline"
-            size="small"
-            variant="text"
-            @click="handleEdit(item.userId)"
+        <template #append>
+          <UserOperateDrawer
+            v-model:visible="drawerVisible"
+            :operate-type="operateType"
+            :role-options="roleOptions"
+            :row-data="editingData"
+            @submitted="handleSubmitted"
           />
-          <VBtn
-            v-if="canDelete"
-            :aria-label="$t('common.delete')"
-            color="error"
-            icon="mdi-delete-outline"
-            size="small"
-            variant="text"
-            @click="handleDelete(item)"
-          />
         </template>
-
-        <template #no-data>
-          <div class="py-12 text-center">
-            <VIcon class="opacity-20" icon="mdi-account-search-outline" size="52" />
-            <div class="mt-2 text-sm opacity-50">{{ $t('page.system.user.empty') }}</div>
-          </div>
-        </template>
-      </VDataTableServer>
-    </template>
-
-    <template #append>
-      <UserOperateDrawer
-        v-model:visible="drawerVisible"
-        :operate-type="operateType"
-        :role-options="roleOptions"
-        :row-data="editingData"
-        @submitted="handleSubmitted"
-      />
-    </template>
-  </TablePageLayout>
+      </TablePageLayout>
+    </div>
+  </div>
 </template>

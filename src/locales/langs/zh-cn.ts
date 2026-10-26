@@ -442,12 +442,15 @@ const zhCN: App.I18n.Schema = {
         selectedCount: '已选择 {count} 项',
         confirmBatchDelete: '确定要删除选中的 {count} 位用户吗？',
         email: '邮箱',
+        deptSearch: '请输入部门名称',
+        allDepts: '全部部门',
         sex: {
           male: '男',
           female: '女',
           unknown: '未知',
         },
         columns: {
+          userId: '用户编号',
           userName: '用户名',
           nickName: '昵称',
           dept: '部门',

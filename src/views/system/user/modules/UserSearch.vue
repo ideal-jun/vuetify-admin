@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, toRaw } from 'vue';
 
+import DateRangeField from '@/components/advanced/DateRangeField.vue';
 import { enableStatusOptions } from '@/constants/business';
 import { $t } from '@/locales';
 import { jsonClone, translateOptions } from '@/utils/common';
@@ -89,6 +90,10 @@ function handleSearch() {
                     :placeholder="$t('page.system.user.form.status')"
                     prepend-inner-icon="mdi-toggle-switch-outline"
                   />
+                </VCol>
+
+                <VCol cols="12" lg="4" md="8" sm="12">
+                  <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
                 </VCol>
 
                 <VCol class="filter-actions flex flex-wrap items-end justify-end gap-2" cols="12">

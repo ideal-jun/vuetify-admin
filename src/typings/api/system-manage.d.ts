@@ -19,12 +19,17 @@ declare namespace Api {
       userName: string | null;
       phonenumber: string | null;
       status: Api.Backend.Status | null;
+      beginTime?: string | null;
+      endTime?: string | null;
     };
 
     /** The query params sent to /system/user/list */
     type UserSearchParams = UserSearchModel & {
       pageNum: number;
       pageSize: number;
+      deptId?: number;
+      'params[beginTime]'?: string;
+      'params[endTime]'?: string;
     };
 
     /** The user fields that can be created or updated */

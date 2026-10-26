@@ -44,7 +44,7 @@ export const themeSettings: App.Theme.ThemeSetting = {
   sider: {
     inverted: false,
     width: 248,
-    collapsedWidth: 76,
+    collapsedWidth: 56,
     mixWidth: 92,
     mixCollapsedWidth: 76,
     mixChildMenuWidth: 208,
