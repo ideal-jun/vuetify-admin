@@ -8,7 +8,7 @@ backend-generic.
 ## ✨ Features
 
 - Vue 3 + Vite 8 + TypeScript 6 + Vuetify 4
-- Backend integration (RuoYi-Cloud by default): captcha login and user/role/menu management using the backend's native fields
+- Backend integration (RuoYi-Cloud by default): captcha login, user/role/menu, dept/post/dict/config/notice, operation/login logs, online users, scheduled jobs, code generator, form builder and profile pages using the backend's native fields
 - Dynamic routes, menus and tabs generated from backend `GET /system/menu/getRouters` (pages without a view render a placeholder)
 - Typed service layer with flat `{ data, error }` responses
 - Dynamic light / dark theme built from typed theme settings and CSS tokens

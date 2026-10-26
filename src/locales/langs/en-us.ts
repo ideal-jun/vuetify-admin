@@ -1,5 +1,18 @@
 import { en as vuetifyEn } from 'vuetify/locale';
 
+import { buildEn } from './pages/build';
+import { configEn } from './pages/config';
+import { deptEn } from './pages/dept';
+import { dictEn } from './pages/dict';
+import { genEn } from './pages/gen';
+import { jobEn } from './pages/job';
+import { logininforEn } from './pages/logininfor';
+import { noticeEn } from './pages/notice';
+import { onlineEn } from './pages/online';
+import { operlogEn } from './pages/operlog';
+import { postEn } from './pages/post';
+import { profileEn } from './pages/profile';
+
 export default {
   $vuetify: {
     ...vuetifyEn,
@@ -254,6 +267,18 @@ export default {
     system_role: 'Role management',
   },
   page: {
+    ...buildEn,
+    ...configEn,
+    ...deptEn,
+    ...dictEn,
+    ...genEn,
+    ...jobEn,
+    ...logininforEn,
+    ...noticeEn,
+    ...onlineEn,
+    ...operlogEn,
+    ...postEn,
+    ...profileEn,
     unsupported: {
       title: 'Page not implemented',
       description:

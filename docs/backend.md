@@ -22,7 +22,7 @@ has no SMS/phone-code or password-reset endpoints, so those flows are not part o
 | `VITE_HTTP_PROXY` / `VITE_PROXY_TARGET` | `Y` / `http://127.0.0.1:8888` | Proxy `/api` to the gateway                       |
 | `VITE_SERVICE_SUCCESS_CODE`             | `200`                         | backend success code                              |
 | `VITE_SERVICE_LOGOUT_CODES`             | `401`                         | Invalid/expired token                             |
-| `VITE_AUTH_ROUTE_MODE`                  | `static`                      | Keep the template routes (see limitations)        |
+| `VITE_AUTH_ROUTE_MODE`                  | `dynamic`                     | Build routes from the backend menu tree           |
 | `VITE_STATIC_SUPER_ROLE`                | `admin`                       | backend super role bypasses the static role check |
 | `VITE_DEFAULT_USER_PASSWORD`            | `admin123`                    | Password used by the create-user form             |
 
@@ -36,9 +36,10 @@ After login the route store requests `GET /system/menu/getRouters` and `src/rout
 tree into Vue routes and menus:
 
 - `component: "Layout"` entries become the base-layout wrapper; `ParentView` directories keep their nesting.
-- `system/user|role|menu/index` map to the template views (canonical route names `system_user`, `system_role`,
-  `system_menu`); every other component path is registered as the **unsupported placeholder** page, so the complete
-  backend menu tree (dept, post, dict, config, notice, logs, monitor, tool, ...) is rendered.
+- The backend menu components map to Vuetify views: `system/user|role|menu|dept|post|dict|config|notice|operlog|logininfor`,
+  `monitor/online|job`, `tool/gen|build` and `system/user/profile`. Unknown component paths are registered with the
+  **placeholder** page, so a newly added backend menu always renders something meaningful without a frontend release.
+- The sidebar, breadcrumbs, tabs and keep-alive cache are all derived from the same route tree.
 - external links (entries with `meta.link`, e.g. Sentinel/Nacos/Swagger/若依官网) become `/external/...` routes
   with `meta.href`; clicking them opens the target in a new tab.
 - `hidden`, `noCache` and the tree order map to `hideInMenu`, `keepAlive` and menu order; icons are translated
@@ -119,12 +120,23 @@ git clone -b springboot3 https://gitee.com/y_project/RuoYi-Cloud.git
 
    ```bash
    mvn -T 1C -DskipTests -Dmaven.test.skip=true \
-     -pl ruoyi-gateway,ruoyi-auth,ruoyi-modules/ruoyi-system -am package
+     -pl ruoyi-gateway,ruoyi-auth,ruoyi-modules/ruoyi-system,ruoyi-modules/ruoyi-gen,ruoyi-modules/ruoyi-job -am package
 
    java -jar ruoyi-modules/ruoyi-system/target/ruoyi-modules-system.jar   # :9201
+   java -jar ruoyi-modules/ruoyi-gen/target/ruoyi-modules-gen.jar         # :9202 (code generator page)
+   java -jar ruoyi-modules/ruoyi-job/target/ruoyi-modules-job.jar         # :9203 (scheduled jobs page)
    java -jar ruoyi-auth/target/ruoyi-auth.jar                             # :9200
    java -jar ruoyi-gateway/target/ruoyi-gateway.jar --server.port=8888    # :8888
    ```
+
+   The job service also needs the Quartz tables and a Redis password in its Nacos config:
+
+   ```bash
+   docker cp sql/quartz.sql mysql:/tmp/quartz.sql
+   docker exec mysql sh -c "mysql -uroot -p123456 ry_cloud_std < /tmp/quartz.sql"
+   ```
+
+   Set `spring.data.redis.password: 123456` in `ruoyi-gen-dev.yml` and `ruoyi-job-dev.yml` as well, then restart Nacos.
 
    ```bash
    # smoke check
@@ -141,10 +153,9 @@ After a successful login the dashboard shows the signed-in backend user:
 
 ![backend home dashboard](images/backend-home.png)
 
-The sidebar, breadcrumb and tabs are generated from the backend menu tree; pages without a template view render the
-unsupported placeholder:
+The sidebar, breadcrumb and tabs are generated from the backend menu tree:
 
-![backend dynamic menu and unsupported page](images/backend-unsupported.png)
+![backend dynamic menu](images/backend-unsupported.png)
 
 The system user page reads the backend `/system/user/list` endpoint (roles fall back to "—" because the list endpoint
 does not include them):
@@ -170,6 +181,14 @@ The action column uses Vuetify's built-in `fixed: 'end'` column option, so it st
 | User CRUD                | `/system/user/list`, `POST/PUT /system/user`, `DELETE /system/user/{ids}`, `PUT /system/user/changeStatus` |
 | Role CRUD                | `/system/role/list`, `/system/role/optionselect`, `POST/PUT /system/role`, `DELETE /system/role/{ids}`     |
 | Menu CRUD                | `/system/menu/list` (flat), `POST/PUT /system/menu`, `DELETE /system/menu/{menuId}`                        |
+| Department / post        | `/system/dept/*`, `/system/post/*` (tree + list, optionselect)                                             |
+| Dictionary               | `/system/dict/type/*`, `/system/dict/data/*`                                                               |
+| Config / notice          | `/system/config/*`, `/system/notice/*`                                                                     |
+| Operation / login logs   | `/system/operlog/*`, `/system/logininfor/*`                                                                |
+| Online users             | `GET /system/online/list`, `DELETE /system/online/{tokenId}`                                               |
+| Scheduled jobs           | `/schedule/job/*` and `/schedule/job/log/*`                                                                |
+| Code generator           | `/code/gen/*` (list, db list, import, preview, edit, generate)                                             |
+| Profile                  | `GET/PUT /system/user/profile`, `PUT /system/user/profile/updatePwd`                                       |
 | Home dashboard           | Composed client-side from user/role/menu counts                                                            |
 
 The service layer uses these backend fields directly: flat `{ total, rows }` tables, status
@@ -178,9 +197,14 @@ stub the service modules, so no backend is required to run the suite.
 
 ## Known limitations
 
-- **Pages without a view**: the menu tree comes from the backend, but only `system/user`, `system/role` and `system/menu`
-  have template views. The other pages (dept/post/dict/config/notice/logs/monitor/tool) render the placeholder page with
-  the backend title; they are real dynamic routes, just without a custom UI.
+- **Unknown pages**: routes whose backend component has no matching frontend view render the placeholder page with
+  the backend title. All menus shipped by the verified backend have a real view.
+- **Simplified tools**: the form builder ports the common Vuetify fields (input, textarea, password, number, select,
+  radio, checkbox, switch, slider, date, time, button) with drag/drop, property editing, preview and generated SFC. The
+  RuoYi container/upload/icon-picker widgets are not ported. The job cron field offers common presets instead of the full
+  RuoYi cron generator.
+- **No Excel export / avatar upload**: list pages omit the RuoYi export buttons and the profile page omits avatar upload;
+  both need extra request/upload plumbing.
 - **Server-side filters**: the backend only supports `userName` / `phonenumber` / `status` for users and
   `roleName` / `roleKey` / `status` for roles. The extra template filters (nickname, email, gender, sorting) are
   no-ops in backend mode.

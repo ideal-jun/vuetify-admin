@@ -20,6 +20,18 @@ export const views: Record<LastLevelRouteKey, RouteComponentInput> = {
   system_menu: () => import('@/views/system/menu/index.vue'),
   system_user: () => import('@/views/system/user/index.vue'),
   system_role: () => import('@/views/system/role/index.vue'),
+  system_dept: () => import('@/views/system/dept/index.vue'),
+  system_post: () => import('@/views/system/post/index.vue'),
+  system_dict: () => import('@/views/system/dict/index.vue'),
+  system_config: () => import('@/views/system/config/index.vue'),
+  system_notice: () => import('@/views/system/notice/index.vue'),
+  system_operlog: () => import('@/views/system/operlog/index.vue'),
+  system_logininfor: () => import('@/views/system/logininfor/index.vue'),
+  profile: () => import('@/views/system/user/profile/index.vue'),
+  monitor_online: () => import('@/views/monitor/online/index.vue'),
+  monitor_job: () => import('@/views/monitor/job/index.vue'),
+  tool_gen: () => import('@/views/tool/gen/index.vue'),
+  tool_build: () => import('@/views/tool/build/index.vue'),
   unsupported: () => import('@/views/_builtin/unsupported/index.vue'),
 };
 

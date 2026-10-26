@@ -56,11 +56,11 @@ describe('transformBackendRouters', () => {
       'system_user',
       'system_role',
       'system_menu',
-      'backend_dept',
-      'backend_post',
-      'backend_dict',
-      'backend_config',
-      'backend_notice',
+      'system_dept',
+      'system_post',
+      'system_dict',
+      'system_config',
+      'system_notice',
       'log',
     ]);
 
@@ -89,19 +89,40 @@ describe('transformBackendRouters', () => {
       component: 'view.system_menu',
       meta: { title: '菜单管理', icon: 'mdi-table', order: 3 },
     });
-  });
-
-  it('registers the unsupported backend views with the placeholder component', () => {
-    const dept = findRoute('backend_dept');
-
-    expect(dept).toMatchObject({
-      name: 'backend_dept',
+    expect(childOf(system?.children ?? [], 'system_dept')).toMatchObject({
+      name: 'system_dept',
       path: 'dept',
-      component: 'view.unsupported',
+      component: 'view.system_dept',
       meta: { title: '部门管理', icon: 'mdi-file-tree', order: 4 },
     });
-    expect(findRoute('backend_post')?.component).toBe('view.unsupported');
-    expect(findRoute('backend_online')?.component).toBe('view.unsupported');
+  });
+
+  it('maps the system and monitor pages to their views', () => {
+    expect(findRoute('system_dept')?.component).toBe('view.system_dept');
+    expect(findRoute('system_post')?.component).toBe('view.system_post');
+    expect(findRoute('system_dict')?.component).toBe('view.system_dict');
+    expect(findRoute('system_config')?.component).toBe('view.system_config');
+    expect(findRoute('system_notice')?.component).toBe('view.system_notice');
+    expect(findRoute('monitor_online')?.component).toBe('view.monitor_online');
+    expect(findRoute('monitor_job')?.component).toBe('view.monitor_job');
+  });
+
+  it('registers unknown backend views with the placeholder component', () => {
+    const [unknownRoute] = transformBackendRouters([
+      {
+        name: 'Unknown',
+        path: '/unknown-page',
+        component: 'system/unknown/index',
+        meta: { title: '未知页面', icon: 'user' },
+      },
+    ]);
+
+    expect(unknownRoute).toMatchObject({
+      name: 'backend_unknown',
+      path: '/unknown-page',
+      component: 'view.unsupported',
+      meta: { title: '未知页面' },
+    });
   });
 
   it('keeps ParentView directories nested', () => {
@@ -114,17 +135,17 @@ describe('transformBackendRouters', () => {
       meta: { title: '日志管理', icon: 'mdi-file-document-outline', order: 9 },
     });
     expect(log?.children?.map((child) => child.name)).toEqual([
-      'backend_operlog',
-      'backend_logininfor',
+      'system_operlog',
+      'system_logininfor',
     ]);
     expect(log?.children?.[0]).toMatchObject({
       path: 'operlog',
-      component: 'view.unsupported',
+      component: 'view.system_operlog',
       meta: { title: '操作日志', icon: 'mdi-form-select', order: 1 },
     });
     expect(log?.children?.[1]).toMatchObject({
       path: 'logininfor',
-      component: 'view.unsupported',
+      component: 'view.system_logininfor',
       meta: { title: '登录日志', icon: 'mdi-login', order: 2 },
     });
   });
@@ -185,7 +206,7 @@ describe('transformBackendRouters', () => {
   it('maps backend icon names to MDI and falls back for unknown icons', () => {
     expect(findRoute('system_user')?.meta?.icon).toBe('mdi-account-outline');
     expect(findRoute('system_role')?.meta?.icon).toBe('mdi-account-group-outline');
-    expect(findRoute('backend_dept')?.meta?.icon).toBe('mdi-file-tree');
+    expect(findRoute('system_dept')?.meta?.icon).toBe('mdi-file-tree');
 
     const [unknownIconRoute, passthroughIconRoute, missingIconRoute] = transformBackendRouters([
       {

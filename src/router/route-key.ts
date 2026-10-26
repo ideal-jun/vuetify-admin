@@ -18,6 +18,18 @@ export const routeMap = {
   system_menu: '/system/menu',
   system_user: '/system/user',
   system_role: '/system/role',
+  system_dept: '/system/dept',
+  system_post: '/system/post',
+  system_dict: '/system/dict',
+  system_config: '/system/config',
+  system_notice: '/system/notice',
+  system_operlog: '/system/operlog',
+  system_logininfor: '/system/logininfor',
+  profile: '/user/profile',
+  monitor_online: '/monitor/online',
+  monitor_job: '/monitor/job',
+  tool_gen: '/tool/gen',
+  tool_build: '/tool/build',
   unsupported: '/unsupported',
 } as const;
 
@@ -45,6 +57,18 @@ export type LastLevelRouteKey = Extract<
   | 'system_menu'
   | 'system_user'
   | 'system_role'
+  | 'system_dept'
+  | 'system_post'
+  | 'system_dict'
+  | 'system_config'
+  | 'system_notice'
+  | 'system_operlog'
+  | 'system_logininfor'
+  | 'profile'
+  | 'monitor_online'
+  | 'monitor_job'
+  | 'tool_gen'
+  | 'tool_build'
   | 'unsupported'
 >;
 

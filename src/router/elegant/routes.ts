@@ -78,6 +78,18 @@ export const generatedRoutes: ElegantConstRoute[] = [
     },
   },
   {
+    name: 'profile',
+    path: '/user/profile',
+    component: 'layout.base$view.profile',
+    meta: {
+      title: 'Profile',
+      icon: 'mdi-account-circle-outline',
+      constant: true,
+      hideInMenu: true,
+      keepAlive: true,
+    },
+  },
+  {
     name: 'system',
     path: '/system',
     component: 'layout.base',

@@ -1,5 +1,18 @@
 import { zhHans as vuetifyZhHans } from 'vuetify/locale';
 
+import { buildZh } from './pages/build';
+import { configZh } from './pages/config';
+import { deptZh } from './pages/dept';
+import { dictZh } from './pages/dict';
+import { genZh } from './pages/gen';
+import { jobZh } from './pages/job';
+import { logininforZh } from './pages/logininfor';
+import { noticeZh } from './pages/notice';
+import { onlineZh } from './pages/online';
+import { operlogZh } from './pages/operlog';
+import { postZh } from './pages/post';
+import { profileZh } from './pages/profile';
+
 const zhCN: App.I18n.Schema = {
   $vuetify: {
     ...vuetifyZhHans,
@@ -253,6 +266,18 @@ const zhCN: App.I18n.Schema = {
     system_role: '角色管理',
   },
   page: {
+    ...buildZh,
+    ...configZh,
+    ...deptZh,
+    ...dictZh,
+    ...genZh,
+    ...jobZh,
+    ...logininforZh,
+    ...noticeZh,
+    ...onlineZh,
+    ...operlogZh,
+    ...postZh,
+    ...profileZh,
     unsupported: {
       title: '页面待实现',
       description: '该菜单已由后端返回，但当前还没有对应页面。可以实现该页面，或在后端隐藏此菜单。',

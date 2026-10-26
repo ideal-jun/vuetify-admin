@@ -8,9 +8,20 @@ type BackendRouter = Api.Backend.RouterRecord;
 
 /** The backend component paths that have a matching view in this template */
 const COMPONENT_VIEWS: Record<string, { view: LastLevelRouteKey; name: RouteKey }> = {
+  'system/config/index': { view: 'system_config', name: 'system_config' },
+  'system/dept/index': { view: 'system_dept', name: 'system_dept' },
+  'system/dict/index': { view: 'system_dict', name: 'system_dict' },
+  'system/logininfor/index': { view: 'system_logininfor', name: 'system_logininfor' },
   'system/menu/index': { view: 'system_menu', name: 'system_menu' },
+  'system/notice/index': { view: 'system_notice', name: 'system_notice' },
+  'system/operlog/index': { view: 'system_operlog', name: 'system_operlog' },
+  'system/post/index': { view: 'system_post', name: 'system_post' },
   'system/role/index': { view: 'system_role', name: 'system_role' },
   'system/user/index': { view: 'system_user', name: 'system_user' },
+  'monitor/job/index': { view: 'monitor_job', name: 'monitor_job' },
+  'monitor/online/index': { view: 'monitor_online', name: 'monitor_online' },
+  'tool/build/index': { view: 'tool_build', name: 'tool_build' },
+  'tool/gen/index': { view: 'tool_gen', name: 'tool_gen' },
 };
 
 function sanitizeName(value: string) {

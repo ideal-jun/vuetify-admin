@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { useRouterPush } from '@/hooks/common/router';
 import { $t } from '@/locales';
@@ -8,6 +9,7 @@ import { useAuthStore } from '@/store/modules/auth';
 defineOptions({ name: 'UserAvatar' });
 
 const authStore = useAuthStore();
+const router = useRouter();
 const { toLogin } = useRouterPush();
 
 const displayName = computed(() => {
@@ -19,6 +21,10 @@ const displayName = computed(() => {
 const initials = computed(() => displayName.value.slice(0, 1).toUpperCase() || 'A');
 
 const avatar = computed(() => authStore.userInfo.user.avatar || '');
+
+function goProfile() {
+  void router.push({ name: 'profile' });
+}
 
 function loginOrRegister() {
   void toLogin();
@@ -76,7 +82,11 @@ function logout() {
 
       <VDivider class="my-1" />
 
-      <VListItem :prepend-icon="'mdi-account-outline'" :title="$t('common.userCenter')" />
+      <VListItem
+        :prepend-icon="'mdi-account-outline'"
+        :title="$t('common.userCenter')"
+        @click="goProfile"
+      />
 
       <VListItem
         base-color="error"
