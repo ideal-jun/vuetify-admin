@@ -36,6 +36,12 @@ export default defineConfig({
       reporter: ['text', 'html'],
       include: ['src/**/*.{ts,vue}'],
       exclude: ['src/**/*.spec.ts', 'src/test/**', 'src/typings/**'],
+      thresholds: {
+        statements: 50,
+        branches: 40,
+        functions: 42,
+        lines: 50,
+      },
     },
   },
 });

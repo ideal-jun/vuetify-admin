@@ -47,7 +47,12 @@ pnpm preview      # preview the production build
 pnpm check        # format check + lint + type-check + tests
 pnpm test         # run the Vitest suite (services are stubbed, no backend needed)
 pnpm test:coverage
+pnpm test:e2e     # Playwright E2E; needs the backend on 8888 and Docker/Redis for the captcha
 ```
+
+The E2E suite uses the installed Chrome channel and the real gateway. Start MySQL, Redis, Nacos and the RuoYi
+gateway/auth/system/gen/job services first; the tests log in through `/api/auth/login` and read the captcha code from
+the local Redis container.
 
 ## 📁 Project structure
 
