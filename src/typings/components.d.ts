@@ -30,6 +30,7 @@ declare module 'vue' {
     ReloadButton: typeof import('./../components/common/ReloadButton.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchPanel: typeof import('./../components/advanced/SearchPanel.vue')['default']
     SvgIcon: typeof import('./../components/custom/SvgIcon.vue')['default']
     SystemLogo: typeof import('./../components/common/SystemLogo.vue')['default']
     TableColumnSetting: typeof import('./../components/advanced/TableColumnSetting.vue')['default']

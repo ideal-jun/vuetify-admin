@@ -287,7 +287,7 @@ watch(
                   v-model:end="searchParams.endTime"
                 />
               </VCol>
-              <VCol class="filter-actions flex items-end justify-end gap-2" cols="12">
+              <VCol class="flex items-end justify-end gap-2" cols="12">
                 <VBtn icon="mdi-magnify" size="small" type="submit" variant="text" />
               </VCol>
             </VRow>

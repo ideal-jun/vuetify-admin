@@ -97,7 +97,7 @@ function handleSearch() {
       <DateRangeField v-model:begin="model.beginTime" v-model:end="model.endTime" />
     </VCol>
 
-    <VCol class="filter-actions flex items-center justify-end gap-2" cols="12">
+    <VCol class="flex items-center justify-end gap-2" cols="12">
       <VBtn prepend-icon="mdi-refresh" size="small" variant="text" @click="handleReset">
         {{ $t('common.reset') }}
       </VBtn>
