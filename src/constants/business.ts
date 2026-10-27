@@ -46,6 +46,7 @@ export const permissionCodes = {
   userEdit: 'system:user:edit',
   userDelete: 'system:user:remove',
   userResetPwd: 'system:user:resetPwd',
+  userExport: 'system:user:export',
   deptAdd: 'system:dept:add',
   deptEdit: 'system:dept:edit',
   deptDelete: 'system:dept:remove',

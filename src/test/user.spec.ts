@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
+import { exportUserList, fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
 import { fetchGetDeptList } from '@/service/api/system-dept';
 import { setupTestAuth } from '@/test/auth';
 import roleOptionFixture from '@/test/fixtures/backend/role-option.json';
@@ -10,6 +10,7 @@ import { waitForButton, waitForDrawer, waitForTableRows, waitForText } from '@/t
 import SystemUser from '@/views/system/user/index.vue';
 
 vi.mock('@/service/api', () => ({
+  exportUserList: vi.fn(),
   fetchBatchDeleteUser: vi.fn(),
   fetchChangeUserStatus: vi.fn(),
   fetchCreateUser: vi.fn(),
@@ -25,6 +26,7 @@ const allRoles = roleOptionFixture.data as unknown as Api.SystemManage.AllRole[]
 const getUserListMock = vi.mocked(fetchGetUserList);
 const getAllRolesMock = vi.mocked(fetchGetAllRoles);
 const createUserMock = vi.mocked(fetchCreateUser);
+const exportUserListMock = vi.mocked(exportUserList);
 
 vi.mock('@/service/api/system-dept', () => ({ fetchGetDeptList: vi.fn() }));
 
@@ -135,6 +137,26 @@ describe('user management page', () => {
 
     await vi.waitFor(() => {
       expect(getUserListMock).toHaveBeenCalledWith(expect.objectContaining({ deptId: 101 }));
+    });
+
+    wrapper.unmount();
+  });
+
+  it('exports the current user query', async () => {
+    const wrapper = mountPage();
+
+    await waitForText(wrapper, '第 1-2 条，共 2 条');
+    exportUserListMock.mockResolvedValue(undefined);
+
+    const exportButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().trim() === '导出');
+
+    expect(exportButton).toBeDefined();
+    await exportButton?.trigger('click');
+
+    await vi.waitFor(() => {
+      expect(exportUserListMock).toHaveBeenCalled();
     });
 
     wrapper.unmount();

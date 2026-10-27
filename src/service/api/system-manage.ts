@@ -1,4 +1,5 @@
 import { request } from '../request';
+import { downloadFile } from '../request/download';
 
 /**
  * Get the user list
@@ -55,6 +56,16 @@ export function fetchUpdateUser(data: Api.SystemManage.UpdateUser) {
 /** Change the enabled/disabled status of a user */
 export function fetchChangeUserStatus(data: { userId: number; status: Api.Backend.Status }) {
   return request<null>({ url: '/system/user/changeStatus', method: 'PUT', data });
+}
+
+/** Export the current user query to an Excel file */
+export function exportUserList(params?: Record<string, unknown>) {
+  return downloadFile({
+    url: '/system/user/export',
+    method: 'POST',
+    params,
+    filename: 'users.xlsx',
+  });
 }
 
 /** Reset a user's password */

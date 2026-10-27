@@ -33,6 +33,8 @@ export default {
   common: {
     action: 'Action',
     dateRange: 'Date range',
+    export: 'Export',
+    exportSuccess: 'Export started',
     startDate: 'Start date',
     endDate: 'End date',
     add: 'Add',

@@ -33,6 +33,8 @@ const zhCN: App.I18n.Schema = {
   common: {
     action: '操作',
     dateRange: '时间范围',
+    export: '导出',
+    exportSuccess: '已开始导出',
     startDate: '开始日期',
     endDate: '结束日期',
     add: '新增',

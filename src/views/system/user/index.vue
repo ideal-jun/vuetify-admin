@@ -10,6 +10,7 @@ import type { TableColumnCheck } from '@/hooks/common/table';
 import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
+  exportUserList,
   fetchBatchDeleteUser,
   fetchChangeUserStatus,
   fetchDeleteUser,
@@ -111,10 +112,12 @@ const canAdd = computed(() => hasAuth(permissionCodes.userAdd));
 const canEdit = computed(() => hasAuth(permissionCodes.userEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.userDelete));
 const canResetPwd = computed(() => hasAuth(permissionCodes.userResetPwd));
+const canExport = computed(() => hasAuth(permissionCodes.userExport));
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
   useTableOperate<Api.SystemManage.User, number>(data, 'userId', loadUsers);
 
+const exporting = ref(false);
 const resetPwdVisible = ref(false);
 const resetPwdUser = ref<Api.SystemManage.User | null>(null);
 
@@ -125,6 +128,27 @@ function handleResetPwd(user: Api.SystemManage.User) {
 
 function handleResetPwdSubmitted() {
   refreshKey.value += 1;
+}
+
+async function handleExport() {
+  const { beginTime, endTime, ...rest } = searchParams.value;
+
+  exporting.value = true;
+
+  try {
+    await exportUserList({
+      ...rest,
+      ...(selectedDeptId.value === null ? {} : { deptId: selectedDeptId.value }),
+      ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
+      ...(endTime ? { 'params[endTime]': endTime } : {}),
+    });
+
+    window.$message?.success($t('common.exportSuccess'));
+  } catch (error) {
+    window.$message?.error(error instanceof Error ? error.message : $t('request.networkError'));
+  } finally {
+    exporting.value = false;
+  }
 }
 
 const roleOptions = ref<CommonType.Option<number>[]>([]);
@@ -343,6 +367,17 @@ onMounted(() => {
             @refresh="handleRefresh"
           >
             <template #prefix>
+              <VBtn
+                v-if="canExport"
+                :loading="exporting"
+                prepend-icon="mdi-download"
+                size="small"
+                variant="text"
+                @click="handleExport"
+              >
+                {{ $t('common.export') }}
+              </VBtn>
+
               <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
                 {{ $t('page.system.user.selectedCount', { count: checkedRowKeys.length }) }}
               </VChip>
