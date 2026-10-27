@@ -19,6 +19,7 @@ import {
 } from '@/service/api';
 
 import UserDeptTree from './modules/UserDeptTree.vue';
+import UserImportDialog from './modules/UserImportDialog.vue';
 import UserOperateDrawer from './modules/UserOperateDrawer.vue';
 import UserResetPwdDialog from './modules/UserResetPwdDialog.vue';
 import UserSearch from './modules/UserSearch.vue';
@@ -113,11 +114,13 @@ const canEdit = computed(() => hasAuth(permissionCodes.userEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.userDelete));
 const canResetPwd = computed(() => hasAuth(permissionCodes.userResetPwd));
 const canExport = computed(() => hasAuth(permissionCodes.userExport));
+const canImport = computed(() => hasAuth(permissionCodes.userImport));
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
   useTableOperate<Api.SystemManage.User, number>(data, 'userId', loadUsers);
 
 const exporting = ref(false);
+const importVisible = ref(false);
 const resetPwdVisible = ref(false);
 const resetPwdUser = ref<Api.SystemManage.User | null>(null);
 
@@ -368,6 +371,16 @@ onMounted(() => {
           >
             <template #prefix>
               <VBtn
+                v-if="canImport"
+                prepend-icon="mdi-upload"
+                size="small"
+                variant="text"
+                @click="importVisible = true"
+              >
+                {{ $t('page.system.user.import') }}
+              </VBtn>
+
+              <VBtn
                 v-if="canExport"
                 :loading="exporting"
                 prepend-icon="mdi-download"
@@ -498,6 +511,8 @@ onMounted(() => {
         </template>
 
         <template #append>
+          <UserImportDialog v-model:visible="importVisible" @submitted="refreshKey += 1" />
+
           <UserResetPwdDialog
             v-model:visible="resetPwdVisible"
             :user="resetPwdUser"

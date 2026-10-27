@@ -1,5 +1,6 @@
 import { request } from '../request';
 import { downloadFile } from '../request/download';
+import { uploadFile } from '../request/upload';
 
 /**
  * Get the user list
@@ -65,6 +66,25 @@ export function exportUserList(params?: Record<string, unknown>) {
     method: 'POST',
     params,
     filename: 'users.xlsx',
+  });
+}
+
+/** Download the user import template */
+export function downloadUserTemplate() {
+  return downloadFile({
+    url: '/system/user/importTemplate',
+    method: 'POST',
+    filename: 'user_template.xlsx',
+  });
+}
+
+/** Import users from an Excel file */
+export function importUserData(file: File, updateSupport: boolean) {
+  return uploadFile({
+    url: '/system/user/importData',
+    file,
+    fieldName: 'file',
+    params: { updateSupport },
   });
 }
 
