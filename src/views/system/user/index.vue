@@ -19,6 +19,7 @@ import {
 
 import UserDeptTree from './modules/UserDeptTree.vue';
 import UserOperateDrawer from './modules/UserOperateDrawer.vue';
+import UserResetPwdDialog from './modules/UserResetPwdDialog.vue';
 import UserSearch from './modules/UserSearch.vue';
 
 defineOptions({ name: 'SystemUser' });
@@ -109,9 +110,22 @@ const { hasAuth } = useAuth();
 const canAdd = computed(() => hasAuth(permissionCodes.userAdd));
 const canEdit = computed(() => hasAuth(permissionCodes.userEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.userDelete));
+const canResetPwd = computed(() => hasAuth(permissionCodes.userResetPwd));
 
 const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
   useTableOperate<Api.SystemManage.User, number>(data, 'userId', loadUsers);
+
+const resetPwdVisible = ref(false);
+const resetPwdUser = ref<Api.SystemManage.User | null>(null);
+
+function handleResetPwd(user: Api.SystemManage.User) {
+  resetPwdUser.value = user;
+  resetPwdVisible.value = true;
+}
+
+function handleResetPwdSubmitted() {
+  refreshKey.value += 1;
+}
 
 const roleOptions = ref<CommonType.Option<number>[]>([]);
 
@@ -410,6 +424,33 @@ onMounted(() => {
               >
                 {{ $t('common.delete') }}
               </VBtn>
+
+              <VMenu v-if="canResetPwd || canEdit" location="bottom end">
+                <template #activator="{ props: activatorProps }">
+                  <VBtn
+                    v-bind="activatorProps"
+                    :aria-label="$t('page.system.user.more')"
+                    icon="mdi-dots-horizontal"
+                    size="small"
+                    variant="text"
+                  />
+                </template>
+
+                <VList density="compact" min-width="170" nav>
+                  <VListItem
+                    v-if="canResetPwd"
+                    :prepend-icon="'mdi-key-outline'"
+                    :title="$t('page.system.user.resetPassword')"
+                    @click="handleResetPwd(item)"
+                  />
+                  <VListItem
+                    v-if="canEdit"
+                    :prepend-icon="'mdi-account-key-outline'"
+                    :title="$t('page.system.user.assignRole')"
+                    @click="handleEdit(item.userId)"
+                  />
+                </VList>
+              </VMenu>
             </template>
 
             <template #no-data>
@@ -422,6 +463,12 @@ onMounted(() => {
         </template>
 
         <template #append>
+          <UserResetPwdDialog
+            v-model:visible="resetPwdVisible"
+            :user="resetPwdUser"
+            @submitted="handleResetPwdSubmitted"
+          />
+
           <UserOperateDrawer
             v-model:visible="drawerVisible"
             :operate-type="operateType"
