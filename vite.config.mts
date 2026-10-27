@@ -9,6 +9,28 @@ import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify';
 
 const buildTime = new Date().toISOString();
 
+/** Only ship the woff2 build of the MDI font, not the eot/ttf/woff variants. */
+const mdiWoff2Only = {
+  name: 'mdi-woff2-only',
+  enforce: 'pre',
+  transform(code: string, id: string) {
+    if (!id.includes('@mdi/font')) {
+      return;
+    }
+
+    return code.replace(
+      /@font-face\s*\{[\s\S]*?\}/,
+      `@font-face {
+  font-family: "Material Design Icons";
+  src: url("../fonts/materialdesignicons-webfont.woff2?v=7.4.47") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}`,
+    );
+  },
+};
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -16,6 +38,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
+      mdiWoff2Only,
       Vue({
         template: { transformAssetUrls },
       }),
@@ -30,12 +53,13 @@ export default defineConfig(({ mode }) => {
           families: [
             {
               name: 'Roboto Mono',
+              subset: 'latin',
               weights: [400, 700],
             },
             {
               name: 'Roboto',
-              weights: [100, 300, 400, 500, 700, 900],
-              styles: ['normal', 'italic'],
+              subset: 'latin',
+              weights: [400, 500, 700],
             },
           ],
         },

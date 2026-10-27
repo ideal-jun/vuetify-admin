@@ -1,12 +1,8 @@
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  fetchCreateUser,
-  fetchGetAllRoles,
-  fetchGetDeptList,
-  fetchGetUserList,
-} from '@/service/api';
+import { fetchCreateUser, fetchGetAllRoles, fetchGetUserList } from '@/service/api';
+import { fetchGetDeptList } from '@/service/api/system-dept';
 import { setupTestAuth } from '@/test/auth';
 import roleOptionFixture from '@/test/fixtures/backend/role-option.json';
 import userListFixture from '@/test/fixtures/backend/user-list.json';
@@ -19,7 +15,6 @@ vi.mock('@/service/api', () => ({
   fetchCreateUser: vi.fn(),
   fetchDeleteUser: vi.fn(),
   fetchGetAllRoles: vi.fn(),
-  fetchGetDeptList: vi.fn(),
   fetchGetUserList: vi.fn(),
   fetchUpdateUser: vi.fn(),
 }));
@@ -31,9 +26,16 @@ const getUserListMock = vi.mocked(fetchGetUserList);
 const getAllRolesMock = vi.mocked(fetchGetAllRoles);
 const createUserMock = vi.mocked(fetchCreateUser);
 
+vi.mock('@/service/api/system-dept', () => ({ fetchGetDeptList: vi.fn() }));
+
 let users: Api.SystemManage.User[] = [];
 
 beforeEach(() => {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: vi.fn(),
+  });
+
   setupTestAuth();
 
   users = fixtureUsers.map((user) => structuredClone(user));
@@ -49,7 +51,13 @@ beforeEach(() => {
   }));
 
   getAllRolesMock.mockResolvedValue({ data: structuredClone(allRoles), error: null });
-  vi.mocked(fetchGetDeptList).mockResolvedValue({ data: [], error: null });
+  vi.mocked(fetchGetDeptList).mockResolvedValue({
+    data: [
+      { parentId: 0, deptId: 100, deptName: '若依科技', orderNum: 1 },
+      { parentId: 100, deptId: 101, deptName: '研发部门', orderNum: 1 },
+    ] as unknown as Api.SystemManage.Dept[],
+    error: null,
+  });
 
   createUserMock.mockImplementation(async (payload) => {
     users = [
@@ -108,6 +116,26 @@ describe('user management page', () => {
 
     expect(wrapper.findAll('button').some((button) => button.text().trim() === '删除')).toBe(false);
     expect(wrapper.findAll('button').some((button) => button.text().trim() === '新增')).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it('filters users when a department is selected', async () => {
+    const wrapper = mountPage();
+
+    await waitForText(wrapper, '研发部门');
+    getUserListMock.mockClear();
+
+    const deptNode = wrapper
+      .findAll('.v-treeview-item')
+      .find((item) => item.text().includes('研发部门'));
+
+    expect(deptNode).toBeDefined();
+    await deptNode?.trigger('click');
+
+    await vi.waitFor(() => {
+      expect(getUserListMock).toHaveBeenCalledWith(expect.objectContaining({ deptId: 101 }));
+    });
 
     wrapper.unmount();
   });
