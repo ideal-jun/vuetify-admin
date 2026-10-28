@@ -24,6 +24,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // The full-page mount tests are heavy and the v8 coverage run slows them
+    // another few times; the 5s default times out even though each file passes
+    // on its own.
+    testTimeout: 30_000,
     server: {
       deps: {
         inline: ['vuetify'],
