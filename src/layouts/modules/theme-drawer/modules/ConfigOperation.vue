@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, useTemplateRef } from 'vue';
 
 import { $t } from '@/locales';
 import { useThemeStore } from '@/store/modules/theme';
@@ -10,7 +10,7 @@ defineOptions({
 
 const themeStore = useThemeStore();
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = useTemplateRef<HTMLTextAreaElement>('textareaRef');
 
 const dataClipboardText = computed(() => {
   const reg = /"\w+":/g;
@@ -18,12 +18,12 @@ const dataClipboardText = computed(() => {
   return themeStore.settingsJson.replace(reg, (match) => match.replace(/"/g, ''));
 });
 
-function handleReset() {
+async function handleReset() {
   themeStore.resetStore();
 
-  setTimeout(() => {
-    window.$message?.success($t('theme.configOperation.resetSuccessMsg'));
-  }, 50);
+  await nextTick();
+
+  window.$message?.success($t('theme.configOperation.resetSuccessMsg'));
 }
 
 async function handleCopy() {

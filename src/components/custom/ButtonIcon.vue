@@ -3,22 +3,19 @@ import SvgIcon from '@/components/custom/SvgIcon.vue';
 
 defineOptions({ name: 'ButtonIcon', inheritAttrs: false });
 
-withDefaults(
-  defineProps<{
-    icon?: string;
-    tooltipContent?: string;
-    tooltipPlacement?: 'top' | 'bottom' | 'start' | 'end' | 'bottom start' | 'top start';
-    zIndex?: number;
-    size?: string | number;
-  }>(),
-  {
-    icon: '',
-    tooltipContent: '',
-    tooltipPlacement: 'bottom',
-    zIndex: 98,
-    size: 'default',
-  },
-);
+const {
+  icon = '',
+  tooltipContent = '',
+  tooltipPlacement = 'bottom',
+  zIndex = 98,
+  size = 'default',
+} = defineProps<{
+  icon?: string;
+  tooltipContent?: string;
+  tooltipPlacement?: 'top' | 'bottom' | 'start' | 'end' | 'bottom start' | 'top start';
+  zIndex?: number;
+  size?: string | number;
+}>();
 </script>
 
 <template>

@@ -22,6 +22,8 @@ const initials = computed(() => displayName.value.slice(0, 1).toUpperCase() || '
 
 const avatar = computed(() => authStore.userInfo.user.avatar || '');
 
+const rolesText = computed(() => authStore.userInfo.roles.join(' · '));
+
 function goProfile() {
   void router.push({ name: 'profile' });
 }
@@ -76,7 +78,7 @@ function logout() {
         </template>
         <VListItemTitle class="font-600">{{ displayName }}</VListItemTitle>
         <VListItemSubtitle>
-          {{ authStore.userInfo.roles.join(' · ') }}
+          {{ rolesText }}
         </VListItemSubtitle>
       </VListItem>
 

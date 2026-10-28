@@ -14,7 +14,7 @@ interface Props {
   existingModels: string[];
 }
 
-const props = defineProps<Props>();
+const { field, form, existingModels } = defineProps<Props>();
 
 const emit = defineEmits<{
   'rename-model': [model: string];
@@ -35,27 +35,23 @@ const formRefError = ref('');
 const modelNameDraft = ref('');
 const modelNameError = ref('');
 
-const showPlaceholder = computed(() => Boolean(props.field && hasPlaceholder(props.field.type)));
-const showOptions = computed(() => Boolean(props.field && hasOptions(props.field.type)));
-const showNumberSettings = computed(
-  () => props.field?.type === 'number' || props.field?.type === 'slider',
-);
-const showTextDefault = computed(() => Boolean(props.field && isTextType(props.field.type)));
-const showChoiceDefault = computed(
-  () => props.field?.type === 'select' || props.field?.type === 'radio',
-);
-const isButton = computed(() => props.field?.type === 'button');
-const isNumber = computed(() => props.field?.type === 'number');
-const isSlider = computed(() => props.field?.type === 'slider');
-const isSwitch = computed(() => props.field?.type === 'switch');
-const isCheckbox = computed(() => props.field?.type === 'checkbox');
+const showPlaceholder = computed(() => Boolean(field && hasPlaceholder(field.type)));
+const showOptions = computed(() => Boolean(field && hasOptions(field.type)));
+const showNumberSettings = computed(() => field?.type === 'number' || field?.type === 'slider');
+const showTextDefault = computed(() => Boolean(field && isTextType(field.type)));
+const showChoiceDefault = computed(() => field?.type === 'select' || field?.type === 'radio');
+const isButton = computed(() => field?.type === 'button');
+const isNumber = computed(() => field?.type === 'number');
+const isSlider = computed(() => field?.type === 'slider');
+const isSwitch = computed(() => field?.type === 'switch');
+const isCheckbox = computed(() => field?.type === 'checkbox');
 
 const optionItems = computed(() =>
-  (props.field?.options ?? []).map((option) => ({ title: option.label, value: option.value })),
+  (field?.options ?? []).map((option) => ({ title: option.label, value: option.value })),
 );
 
 const defaultText = computed(() => {
-  const value = props.field?.defaultValue;
+  const value = field?.defaultValue;
 
   if (typeof value === 'string') {
     return value;
@@ -65,40 +61,40 @@ const defaultText = computed(() => {
 });
 
 const defaultNumber = computed(() =>
-  typeof props.field?.defaultValue === 'number' ? props.field.defaultValue : null,
+  typeof field?.defaultValue === 'number' ? field.defaultValue : null,
 );
 
 const defaultSlider = computed(() => {
-  const value = props.field?.defaultValue;
+  const value = field?.defaultValue;
 
-  return typeof value === 'number' ? value : (props.field?.min ?? 0);
+  return typeof value === 'number' ? value : (field?.min ?? 0);
 });
 
-const defaultBoolean = computed(() => Boolean(props.field?.defaultValue));
+const defaultBoolean = computed(() => Boolean(field?.defaultValue));
 
 const defaultChoice = computed(() => {
-  const value = props.field?.defaultValue;
+  const value = field?.defaultValue;
 
   return typeof value === 'string' || typeof value === 'number' ? value : null;
 });
 
 const defaultArray = computed(() => {
-  const value = props.field?.defaultValue;
+  const value = field?.defaultValue;
 
   return Array.isArray(value) ? value : [];
 });
 
 watch(
-  () => props.field?.id,
+  () => field?.id,
   () => {
-    fieldNameDraft.value = props.field?.model ?? '';
+    fieldNameDraft.value = field?.model ?? '';
     fieldNameError.value = '';
   },
   { immediate: true },
 );
 
 watch(
-  () => props.form.formRef,
+  () => form.formRef,
   (value) => {
     formRefDraft.value = value;
     formRefError.value = '';
@@ -107,7 +103,7 @@ watch(
 );
 
 watch(
-  () => props.form.modelName,
+  () => form.modelName,
   (value) => {
     modelNameDraft.value = value;
     modelNameError.value = '';
@@ -128,20 +124,20 @@ function onFieldNameInput(value: unknown) {
     return;
   }
 
-  if (props.existingModels.includes(next)) {
+  if (existingModels.includes(next)) {
     fieldNameError.value = $t('page.build.field.duplicateModel');
     return;
   }
 
   fieldNameError.value = '';
 
-  if (props.field && next !== props.field.model) {
+  if (field && next !== field.model) {
     emit('rename-model', next);
   }
 }
 
 function resetFieldName() {
-  fieldNameDraft.value = props.field?.model ?? '';
+  fieldNameDraft.value = field?.model ?? '';
   fieldNameError.value = '';
 }
 
@@ -154,20 +150,20 @@ function onFormRefInput(value: unknown) {
     return;
   }
 
-  if (next === props.form.modelName) {
+  if (next === form.modelName) {
     formRefError.value = $t('page.build.form.duplicateIdentifier');
     return;
   }
 
   formRefError.value = '';
 
-  if (next !== props.form.formRef) {
+  if (next !== form.formRef) {
     emit('update-form', { formRef: next });
   }
 }
 
 function resetFormRef() {
-  formRefDraft.value = props.form.formRef;
+  formRefDraft.value = form.formRef;
   formRefError.value = '';
 }
 
@@ -180,20 +176,20 @@ function onModelNameInput(value: unknown) {
     return;
   }
 
-  if (next === props.form.formRef) {
+  if (next === form.formRef) {
     modelNameError.value = $t('page.build.form.duplicateIdentifier');
     return;
   }
 
   modelNameError.value = '';
 
-  if (next !== props.form.modelName) {
+  if (next !== form.modelName) {
     emit('update-form', { modelName: next });
   }
 }
 
 function resetModelName() {
-  modelNameDraft.value = props.form.modelName;
+  modelNameDraft.value = form.modelName;
   modelNameError.value = '';
 }
 
@@ -206,7 +202,7 @@ function updateDefaultNumber(value: unknown) {
 }
 
 function updateDefaultSlider(value: unknown) {
-  patchField({ defaultValue: typeof value === 'number' ? value : (props.field?.min ?? 0) });
+  patchField({ defaultValue: typeof value === 'number' ? value : (field?.min ?? 0) });
 }
 
 function updateDefaultBoolean(value: unknown) {
@@ -238,69 +234,71 @@ function parseOptionValue(raw: string): string | number {
 }
 
 function addOption() {
-  const field = props.field;
+  const currentField = field;
 
-  if (!field) {
-    return;
-  }
-
-  patchField({ options: [...field.options, { label: '', value: field.options.length + 1 }] });
-}
-
-function updateOptionLabel(index: number, value: unknown) {
-  const field = props.field;
-
-  if (!field) {
+  if (!currentField) {
     return;
   }
 
   patchField({
-    options: field.options.map((option, current) =>
+    options: [...currentField.options, { label: '', value: currentField.options.length + 1 }],
+  });
+}
+
+function updateOptionLabel(index: number, value: unknown) {
+  const currentField = field;
+
+  if (!currentField) {
+    return;
+  }
+
+  patchField({
+    options: currentField.options.map((option, current) =>
       current === index ? { ...option, label: String(value ?? '') } : option,
     ),
   });
 }
 
 function updateOptionValue(index: number, value: unknown) {
-  const field = props.field;
+  const currentField = field;
 
-  if (!field) {
+  if (!currentField) {
     return;
   }
 
   const nextValue = parseOptionValue(String(value ?? ''));
 
   patchField({
-    options: field.options.map((option, current) =>
+    options: currentField.options.map((option, current) =>
       current === index ? { ...option, value: nextValue } : option,
     ),
   });
 }
 
 function removeOption(index: number) {
-  const field = props.field;
+  const currentField = field;
 
-  if (!field) {
+  if (!currentField) {
     return;
   }
 
-  patchField({ options: field.options.filter((option, current) => current !== index) });
+  patchField({ options: currentField.options.filter((option, current) => current !== index) });
 }
 
 function moveOption(index: number, offset: number) {
-  const field = props.field;
+  const currentField = field;
 
-  if (!field) {
+  if (!currentField) {
     return;
   }
 
   const target = index + offset;
 
-  if (target < 0 || target >= field.options.length) {
+  if (target < 0 || target >= currentField.options.length) {
     return;
   }
 
-  const options = [...field.options];
+  const options = [...currentField.options];
   const current = options[index];
   const targetOption = options[target];
 

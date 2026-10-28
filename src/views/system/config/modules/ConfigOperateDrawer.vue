@@ -15,9 +15,7 @@ interface Props {
   rowData?: Api.SystemManage.Config | null;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  rowData: null,
-});
+const { operateType, rowData = null } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -34,7 +32,7 @@ const submitting = ref(false);
 const model = ref<Api.SystemManage.ConfigForm>(createDefaultModel());
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.config.add') : $t('page.config.edit'),
+  operateType === 'add' ? $t('page.config.add') : $t('page.config.edit'),
 );
 
 const configTypeOptions = computed<CommonType.Option<Api.SystemManage.ConfigType>[]>(() => [
@@ -63,8 +61,8 @@ function createDefaultModel(): Api.SystemManage.ConfigForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { configName, configKey, configValue, configType, remark } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { configName, configKey, configValue, configType, remark } = rowData;
 
     model.value = {
       configName,
@@ -94,7 +92,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreateConfig({ ...model.value });
 
       if (error) {
@@ -103,13 +101,13 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const { error } = await fetchUpdateConfig({
         ...model.value,
-        configId: props.rowData.configId,
+        configId: rowData.configId,
       });
 
       if (error) {

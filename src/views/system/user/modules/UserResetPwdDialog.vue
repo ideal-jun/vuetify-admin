@@ -12,7 +12,7 @@ interface Props {
   user?: Api.SystemManage.User | null;
 }
 
-const props = defineProps<Props>();
+const { user } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -31,7 +31,7 @@ const password = ref(env.defaultUserPassword);
 const title = computed(() => $t('page.system.user.resetPwdTitle'));
 
 const description = computed(() =>
-  $t('page.system.user.resetPwdDesc', { userName: props.user?.userName ?? '' }),
+  $t('page.system.user.resetPwdDesc', { userName: user?.userName ?? '' }),
 );
 
 const rules = computed(() => ({
@@ -48,7 +48,7 @@ watch(visible, (value) => {
 });
 
 async function handleSubmit() {
-  if (!props.user) {
+  if (!user) {
     return;
   }
 
@@ -61,7 +61,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   const { error } = await fetchResetUserPwd({
-    userId: props.user.userId,
+    userId: user.userId,
     password: password.value,
   });
 

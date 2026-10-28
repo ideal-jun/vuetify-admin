@@ -8,15 +8,10 @@ import { useThemeStore } from '@/store/modules/theme';
 
 defineOptions({ name: 'GlobalContent' });
 
-withDefaults(
-  defineProps<{
-    /** Whether to add padding to the content */
-    showPadding?: boolean;
-  }>(),
-  {
-    showPadding: true,
-  },
-);
+const { showPadding = true } = defineProps<{
+  /** Whether to add padding to the content */
+  showPadding?: boolean;
+}>();
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();

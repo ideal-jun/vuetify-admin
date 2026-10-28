@@ -5,26 +5,23 @@ import SvgIcon from '@/components/custom/SvgIcon.vue';
 
 defineOptions({ name: 'IconTooltip' });
 
-const props = withDefaults(
-  defineProps<{
-    icon?: string;
-    localIcon?: string;
-    desc?: string;
-    placement?: 'top' | 'bottom' | 'start' | 'end';
-  }>(),
-  {
-    icon: 'mdi-help-circle',
-    localIcon: '',
-    desc: '',
-    placement: 'top',
-  },
-);
+const {
+  icon = 'mdi-help-circle',
+  localIcon = '',
+  desc = '',
+  placement = 'top',
+} = defineProps<{
+  icon?: string;
+  localIcon?: string;
+  desc?: string;
+  placement?: 'top' | 'bottom' | 'start' | 'end';
+}>();
 
 const slots = useSlots();
 
 const hasCustomTrigger = computed(() => Boolean(slots.trigger));
 
-if (!hasCustomTrigger.value && !props.icon && !props.localIcon) {
+if (!hasCustomTrigger.value && !icon && !localIcon) {
   throw new Error('icon or localIcon is required when no custom trigger slot is provided');
 }
 </script>

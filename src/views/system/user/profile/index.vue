@@ -55,6 +55,10 @@ const passwordForm = reactive<PasswordForm>({
 
 const sexOptions = computed(() => userSexOptions);
 
+const profileInitial = computed(() =>
+  (profile.value?.user.nickName || profile.value?.user.userName || 'A').slice(0, 1),
+);
+
 const basicRules = computed(() => ({
   nickName: [createRequiredRule($t('page.profile.required'))],
   phonenumber: [createPatternRule(/^1[3-9]\d{9}$/u, $t('page.profile.invalidPhone'))],
@@ -154,7 +158,7 @@ onMounted(() => {
         <VAvatar color="primary" size="72" variant="tonal">
           <VImg v-if="profile?.user.avatar" :src="profile.user.avatar" />
           <span v-else class="text-2xl font-700">
-            {{ (profile?.user.nickName || profile?.user.userName || 'A').slice(0, 1) }}
+            {{ profileInitial }}
           </span>
         </VAvatar>
 

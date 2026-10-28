@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks } from '@/hooks/common/table';
+import { getColumnChecks, useTableData } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchCleanOperlogs,
@@ -58,49 +58,18 @@ const searchParams = ref<Api.SystemOperlog.SearchModel>({
   endTime: null,
 });
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
+const checkedRowKeys = shallowRef<number[]>([]);
 
-const data = ref<Api.SystemOperlog.Operlog[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-const checkedRowKeys = ref<number[]>([]);
+const { data, total, loading, tableOptions, refresh, search } =
+  useTableData<Api.SystemOperlog.Operlog>({
+    fetchData: (page) => fetchGetOperlogList({ ...searchParams.value, ...page }),
+    onBeforeLoad: () => {
+      checkedRowKeys.value = [];
+    },
+  });
 
 const detailVisible = ref(false);
 const detailRow = ref<Api.SystemOperlog.Operlog | null>(null);
-
-let requestSequence = 0;
-
-async function loadOperlogs() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: operlogList, error } = await fetchGetOperlogList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = operlogList.rows;
-  total.value = operlogList.total;
-}
 
 const baseHeaders = computed<OperlogTableHeader[]>(() => [
   {
@@ -189,23 +158,17 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadOperlogs();
-  },
-  { immediate: true },
+interface OperlogTableRow extends Api.SystemOperlog.Operlog {
+  businessTypeLabel: string;
+}
+
+/** The rows with their display labels derived once per page load instead of per render */
+const displayRows = computed<OperlogTableRow[]>(() =>
+  data.value.map((log) => ({
+    ...log,
+    businessTypeLabel: getBusinessTypeLabel(log.businessType),
+  })),
 );
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
 
 function handleView(row: Api.SystemOperlog.Operlog) {
   detailRow.value = row;
@@ -233,7 +196,7 @@ function handleBatchDelete() {
 
       window.$message?.success($t('common.deleteSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -253,7 +216,7 @@ function handleClean() {
 
       window.$message?.success($t('page.operlog.cleanSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -264,7 +227,7 @@ function handleClean() {
     <template #search>
       <VCard class="app-panel shrink-0" variant="flat">
         <div class="p-4">
-          <OperlogSearch v-model:model="searchParams" @search="handleSearch" />
+          <OperlogSearch v-model:model="searchParams" @search="search" />
         </div>
       </VCard>
     </template>
@@ -276,7 +239,7 @@ function handleClean() {
         :show-add="false"
         :show-batch-delete="checkedRowKeys.length > 0"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
@@ -310,7 +273,7 @@ function handleClean() {
         :hide-default-footer="total === 0"
         hover
         item-value="operId"
-        :items="data"
+        :items="displayRows"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
         :loading="loading"
@@ -325,7 +288,7 @@ function handleClean() {
 
         <template #item.businessType="{ item }">
           <VChip size="small" variant="tonal">
-            {{ getBusinessTypeLabel(item.businessType) }}
+            {{ item.businessTypeLabel }}
           </VChip>
         </template>
 

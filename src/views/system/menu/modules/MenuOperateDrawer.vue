@@ -36,7 +36,7 @@ interface MenuForm {
   status: Api.Backend.Status;
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData, parentId, defaultType } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -53,21 +53,21 @@ const { formRef, validate, resetValidation } = useVuetifyForm();
 const submitting = ref(false);
 
 const title = computed(() => {
-  if (props.operateType === 'edit') {
+  if (operateType === 'edit') {
     return $t('page.system.menu.edit');
   }
 
-  return props.defaultType === 'F' ? $t('page.system.menu.addButton') : $t('page.system.menu.add');
+  return defaultType === 'F' ? $t('page.system.menu.addButton') : $t('page.system.menu.add');
 });
 
 const parentMenu = computed(
-  () => menuStore.flatMenus.find((item) => item.menuId === props.parentId) ?? null,
+  () => menuStore.flatMenus.find((item) => item.menuId === parentId) ?? null,
 );
 
 const typeOptions = computed(() => {
   const options = translateOptions(menuTypeOptions);
 
-  if (props.operateType === 'edit') {
+  if (operateType === 'edit') {
     return options;
   }
 
@@ -86,9 +86,9 @@ const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
 const visibleOptions = computed(() => translateOptions(menuVisibleOptions));
 
-const parentDisabled = computed(() => props.operateType === 'edit' || Boolean(props.parentId));
+const parentDisabled = computed(() => operateType === 'edit' || Boolean(parentId));
 
-const typeDisabled = computed(() => props.operateType === 'edit' || Boolean(props.parentId));
+const typeDisabled = computed(() => operateType === 'edit' || Boolean(parentId));
 
 const model = ref<MenuForm>(createDefaultModel());
 
@@ -139,8 +139,8 @@ function createDefaultModel(): MenuForm {
 
   let menuType: Api.Backend.MenuType = 'M';
 
-  if (props.defaultType) {
-    menuType = props.defaultType;
+  if (defaultType) {
+    menuType = defaultType;
   } else if (parentType === 'M') {
     menuType = 'C';
   } else if (parentType === 'C') {
@@ -149,7 +149,7 @@ function createDefaultModel(): MenuForm {
 
   return {
     menuName: '',
-    parentId: props.parentId ?? 0,
+    parentId: parentId ?? 0,
     orderNum: menuStore.flatMenus.length + 1,
     path: '',
     component: '',
@@ -162,7 +162,7 @@ function createDefaultModel(): MenuForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
+  if (operateType === 'edit' && rowData) {
     const {
       menuName,
       parentId,
@@ -174,7 +174,7 @@ function initModel() {
       icon,
       visible,
       status,
-    } = props.rowData;
+    } = rowData;
 
     model.value = {
       menuName,
@@ -235,10 +235,10 @@ async function submitMenu() {
     icon: isButton ? '' : model.value.icon.trim(),
   };
 
-  if (props.operateType === 'edit' && props.rowData) {
+  if (operateType === 'edit' && rowData) {
     const success = await menuStore.updateMenu({
       ...payload,
-      menuId: props.rowData.menuId,
+      menuId: rowData.menuId,
     });
 
     if (!success) {
@@ -260,7 +260,7 @@ async function submitMenu() {
 watch(
   () => model.value.menuType,
   (menuType) => {
-    if (props.operateType === 'edit') {
+    if (operateType === 'edit') {
       return;
     }
 

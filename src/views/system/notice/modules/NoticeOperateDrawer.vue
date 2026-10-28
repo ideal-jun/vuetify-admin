@@ -15,9 +15,7 @@ interface Props {
   rowData?: Api.SystemManage.Notice | null;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  rowData: null,
-});
+const { operateType, rowData = null } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -34,7 +32,7 @@ const submitting = ref(false);
 const model = ref<Api.SystemManage.NoticeForm>(createDefaultModel());
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.notice.add') : $t('page.notice.edit'),
+  operateType === 'add' ? $t('page.notice.add') : $t('page.notice.edit'),
 );
 
 const noticeTypeOptions = computed<CommonType.Option<Api.SystemManage.NoticeType>[]>(() => [
@@ -66,8 +64,8 @@ function createDefaultModel(): Api.SystemManage.NoticeForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { noticeTitle, noticeType, noticeContent, status } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { noticeTitle, noticeType, noticeContent, status } = rowData;
 
     model.value = {
       noticeTitle,
@@ -96,7 +94,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreateNotice({ ...model.value });
 
       if (error) {
@@ -105,13 +103,13 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const { error } = await fetchUpdateNotice({
         ...model.value,
-        noticeId: props.rowData.noticeId,
+        noticeId: rowData.noticeId,
       });
 
       if (error) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { enableStatusRecord, permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { fetchBatchDeletePost, fetchDeletePost, fetchGetPostList } from '@/service/api/system-post';
 
@@ -40,45 +40,22 @@ function createDefaultSearchModel(): Api.SystemManage.PostSearchModel {
 
 const searchParams = ref<Api.SystemManage.PostSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
+const checkedRowKeys = shallowRef<number[]>([]);
+
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadPosts,
+  refresh,
+  search,
+} = useTableData<Api.SystemManage.Post>({
+  fetchData: (page) => fetchGetPostList({ ...searchParams.value, ...page }),
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
 });
-
-const data = ref<Api.SystemManage.Post[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-
-let requestSequence = 0;
-
-async function loadPosts() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: postList, error } = await fetchGetPostList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = postList.rows;
-  total.value = postList.total;
-}
 
 const { hasAuth } = useAuth();
 
@@ -86,8 +63,10 @@ const canAdd = computed(() => hasAuth(permissionCodes.postAdd));
 const canEdit = computed(() => hasAuth(permissionCodes.postEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.postDelete));
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.Post, number>(data, 'postId', loadPosts);
+const { drawerVisible, operateType, editingData, handleAdd, handleEdit } = useTableOperate<
+  Api.SystemManage.Post,
+  number
+>(data, 'postId', loadPosts, { checkedRowKeys });
 
 const baseHeaders = computed<PostTableHeader[]>(() => [
   {
@@ -149,30 +128,14 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadPosts();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 function handleSubmitted() {
   if (operateType.value === 'add') {
-    tableOptions.page = 1;
+    search();
+
+    return;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function reloadAfterRemove(removedCount: number) {
@@ -180,7 +143,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleDelete(post: Api.SystemManage.Post) {
@@ -233,7 +196,7 @@ function handleBatchDelete() {
 <template>
   <TablePageLayout :title="$t('page.post.listTitle')">
     <template #search>
-      <PostSearch v-model:model="searchParams" @search="handleSearch" />
+      <PostSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -244,7 +207,7 @@ function handleBatchDelete() {
         :show-batch-delete="checkedRowKeys.length > 0"
         @add="handleAdd"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">

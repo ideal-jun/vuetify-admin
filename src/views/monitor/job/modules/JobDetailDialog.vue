@@ -13,7 +13,7 @@ interface Props {
   jobGroupOptions: CommonType.Option<string>[];
 }
 
-const props = defineProps<Props>();
+const { jobGroupOptions } = defineProps<Props>();
 
 const visible = defineModel<boolean>('visible', { required: true });
 
@@ -23,13 +23,14 @@ const loading = ref(false);
 const detail = ref<Api.MonitorJob.Job | null>(null);
 
 const groupLabel = computed(
-  () =>
-    props.jobGroupOptions.find((option) => option.value === detail.value?.jobGroup)?.label ?? '—',
+  () => jobGroupOptions.find((option) => option.value === detail.value?.jobGroup)?.label ?? '—',
 );
 
 const statusLabel = computed(() =>
   detail.value?.status === '0' ? $t('page.job.status.normal') : $t('page.job.status.paused'),
 );
+
+const nextValidTimeLabel = computed(() => formatDateTime(detail.value?.nextValidTime));
 
 const misfirePolicyLabel = computed(() => {
   const policy = detail.value?.misfirePolicy;
@@ -117,7 +118,7 @@ watch(visible, (value) => {
           </VCol>
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-60">{{ $t('page.job.detail.nextValidTime') }}</div>
-            <div class="mt-1">{{ formatDateTime(detail.nextValidTime) }}</div>
+            <div class="mt-1">{{ nextValidTimeLabel }}</div>
           </VCol>
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-60">{{ $t('page.job.detail.misfirePolicy') }}</div>

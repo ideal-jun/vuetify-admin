@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import PageTab from '@/components/advanced/page-tab/index.vue';
@@ -23,7 +23,7 @@ const themeStore = useThemeStore();
 const appStore = useAppStore();
 const { getMenuOptions, runTabAction } = useTabMenu();
 
-const tabScrollRef = ref<HTMLElement>();
+const tabScrollRef = useTemplateRef<HTMLElement>('tabScrollRef');
 
 onMounted(async () => {
   tabStore.initTabStore(route);

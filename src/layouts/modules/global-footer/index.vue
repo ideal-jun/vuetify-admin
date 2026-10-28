@@ -1,15 +1,10 @@
 <script setup lang="ts">
 defineOptions({ name: 'GlobalFooter' });
 
-withDefaults(
-  defineProps<{
-    /** Whether the footer content floats to the right */
-    right?: boolean;
-  }>(),
-  {
-    right: false,
-  },
-);
+const { right = false } = defineProps<{
+  /** Whether the footer content floats to the right */
+  right?: boolean;
+}>();
 </script>
 
 <template>

@@ -5,15 +5,15 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'IframePage' });
 
-const props = defineProps<{
+const { url } = defineProps<{
   url: string;
 }>();
 
 const decodedUrl = computed(() => {
   try {
-    return decodeURIComponent(props.url);
+    return decodeURIComponent(url);
   } catch {
-    return props.url;
+    return url;
   }
 });
 

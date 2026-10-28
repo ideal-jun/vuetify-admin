@@ -14,7 +14,7 @@ interface Props {
   tableId: number | null;
 }
 
-const props = defineProps<Props>();
+const { tableId } = defineProps<Props>();
 
 const emit = defineEmits<{
   saved: [];
@@ -285,7 +285,7 @@ function buildParams(table: Api.ToolGen.GenTable): Record<string, unknown> {
 }
 
 async function loadDetail() {
-  if (!props.tableId) {
+  if (!tableId) {
     info.value = null;
     columns.value = [];
     tables.value = [];
@@ -299,7 +299,7 @@ async function loadDetail() {
   activeTab.value = 'basic';
 
   try {
-    const { data, error } = await fetchGetGenTable(props.tableId);
+    const { data, error } = await fetchGetGenTable(tableId);
 
     if (error) {
       info.value = null;

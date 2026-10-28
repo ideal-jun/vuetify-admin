@@ -1,15 +1,10 @@
 <script setup lang="ts">
 defineOptions({ name: 'TablePageLayout' });
 
-withDefaults(
-  defineProps<{
-    /** The table title */
-    title?: string;
-  }>(),
-  {
-    title: '',
-  },
-);
+const { title = '' } = defineProps<{
+  /** The table title */
+  title?: string;
+}>();
 </script>
 
 <template>

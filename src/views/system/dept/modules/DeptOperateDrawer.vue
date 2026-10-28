@@ -25,10 +25,7 @@ interface Props {
   parentId?: number;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  rowData: null,
-  parentId: 0,
-});
+const { operateType, rowData = null, parentId = 0 } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -47,9 +44,7 @@ const model = ref<Api.SystemManage.DeptForm>(createDefaultModel());
 
 const parentOptions = ref<CommonType.Option<number>[]>([]);
 
-const title = computed(() =>
-  props.operateType === 'add' ? $t('page.dept.add') : $t('page.dept.edit'),
-);
+const title = computed(() => (operateType === 'add' ? $t('page.dept.add') : $t('page.dept.edit')));
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
@@ -66,7 +61,7 @@ const rules = computed(() => {
 
 function createDefaultModel(): Api.SystemManage.DeptForm {
   return {
-    parentId: props.parentId,
+    parentId: parentId,
     deptName: '',
     orderNum: 1,
     leader: '',
@@ -118,8 +113,8 @@ async function loadParentOptions() {
   optionsLoading.value = true;
 
   const result =
-    props.operateType === 'edit' && props.rowData
-      ? await fetchGetDeptExcludeChild(props.rowData.deptId)
+    operateType === 'edit' && rowData
+      ? await fetchGetDeptExcludeChild(rowData.deptId)
       : await fetchGetDeptList();
 
   optionsLoading.value = false;
@@ -128,8 +123,8 @@ async function loadParentOptions() {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { parentId, deptName, orderNum, leader, phone, email, status } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { parentId, deptName, orderNum, leader, phone, email, status } = rowData;
 
     model.value = {
       parentId: parentId ?? 0,
@@ -161,7 +156,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreateDept({ ...model.value });
 
       if (error) {
@@ -170,11 +165,11 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
-      const { error } = await fetchUpdateDept({ ...model.value, deptId: props.rowData.deptId });
+      const { error } = await fetchUpdateDept({ ...model.value, deptId: rowData.deptId });
 
       if (error) {
         return;

@@ -8,32 +8,29 @@ import GlobalMenuItem from './components/GlobalMenuItem.vue';
 
 defineOptions({ name: 'GlobalMenu' });
 
-const props = withDefaults(
-  defineProps<{
-    /** The menu tree to render, defaults to the route store menus */
-    items?: App.Global.Menu[];
-    /** Render the menu as an icon rail */
-    rail?: boolean;
-    /** The maximum depth to render, 0 renders only the first level */
-    maxDepth?: number;
-    /** Use the compact list density */
-    compact?: boolean;
-  }>(),
-  {
-    items: undefined,
-    rail: false,
-    maxDepth: undefined,
-    compact: false,
-  },
-);
+const {
+  items = undefined,
+  rail = false,
+  maxDepth = undefined,
+  compact = false,
+} = defineProps<{
+  /** The menu tree to render, defaults to the route store menus */
+  items?: App.Global.Menu[];
+  /** Render the menu as an icon rail */
+  rail?: boolean;
+  /** The maximum depth to render, 0 renders only the first level */
+  maxDepth?: number;
+  /** Use the compact list density */
+  compact?: boolean;
+}>();
 
 const route = useRoute();
 const routeStore = useRouteStore();
 
-const menus = computed(() => props.items ?? routeStore.menus);
+const menus = computed(() => items ?? routeStore.menus);
 
 /** The rail only shows the first level, a deeper menu needs more horizontal space */
-const effectiveMaxDepth = computed(() => (props.rail ? 0 : props.maxDepth));
+const effectiveMaxDepth = computed(() => (rail ? 0 : maxDepth));
 
 const opened = ref<string[]>([]);
 

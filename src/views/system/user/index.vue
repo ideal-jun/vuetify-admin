@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   exportUserList,
@@ -62,50 +62,32 @@ const searchParams = ref<Api.SystemManage.UserSearchModel>(createDefaultSearchMo
 
 const selectedDeptId = ref<number | null>(null);
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
+const checkedRowKeys = shallowRef<number[]>([]);
+
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadUsers,
+  refresh,
+  search,
+} = useTableData<Api.SystemManage.User>({
+  fetchData: (page) => {
+    const { beginTime, endTime, ...rest } = searchParams.value;
+
+    return fetchGetUserList({
+      ...rest,
+      ...(selectedDeptId.value === null ? {} : { deptId: selectedDeptId.value }),
+      ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
+      ...(endTime ? { 'params[endTime]': endTime } : {}),
+      ...page,
+    });
+  },
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
 });
-
-const data = ref<Api.SystemManage.User[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-
-let requestSequence = 0;
-
-async function loadUsers() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { beginTime, endTime, ...rest } = searchParams.value;
-
-  const { data: userList, error } = await fetchGetUserList({
-    ...rest,
-    ...(selectedDeptId.value === null ? {} : { deptId: selectedDeptId.value }),
-    ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
-    ...(endTime ? { 'params[endTime]': endTime } : {}),
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = userList.rows;
-  total.value = userList.total;
-}
 
 const { hasAuth } = useAuth();
 
@@ -116,8 +98,10 @@ const canResetPwd = computed(() => hasAuth(permissionCodes.userResetPwd));
 const canExport = computed(() => hasAuth(permissionCodes.userExport));
 const canImport = computed(() => hasAuth(permissionCodes.userImport));
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.User, number>(data, 'userId', loadUsers);
+const { drawerVisible, operateType, editingData, handleAdd, handleEdit } = useTableOperate<
+  Api.SystemManage.User,
+  number
+>(data, 'userId', loadUsers, { checkedRowKeys });
 
 const exporting = ref(false);
 const importVisible = ref(false);
@@ -130,7 +114,7 @@ function handleResetPwd(user: Api.SystemManage.User) {
 }
 
 function handleResetPwdSubmitted() {
-  refreshKey.value += 1;
+  refresh();
 }
 
 async function handleExport() {
@@ -228,25 +212,35 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
+interface UserTableRow extends Api.SystemManage.User {
+  initial: string;
+}
+
+/** The rows with their display initial derived once per page load instead of per render */
+const displayRows = computed<UserTableRow[]>(() =>
+  data.value.map((user) => ({
+    ...user,
+    initial: user.userName.slice(0, 1).toUpperCase(),
+  })),
+);
+
 async function handleStatusChange(user: Api.SystemManage.User, enabled: boolean) {
   const status = enabled ? '0' : '1';
 
   const { error } = await fetchChangeUserStatus({ userId: user.userId, status });
 
   if (error) {
-    refreshKey.value += 1;
+    refresh();
 
     return;
   }
 
   window.$message?.success($t('common.updateSuccess'));
-  refreshKey.value += 1;
+  refresh();
 }
 
 watch(selectedDeptId, () => {
-  tableOptions.page = 1;
-  checkedRowKeys.value = [];
-  refreshKey.value += 1;
+  search();
 });
 
 async function loadRoles() {
@@ -262,30 +256,14 @@ async function loadRoles() {
   }));
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadUsers();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 function handleSubmitted() {
   if (operateType.value === 'add') {
-    tableOptions.page = 1;
+    search();
+
+    return;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function reloadAfterRemove(removedCount: number) {
@@ -293,7 +271,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleDelete(user: Api.SystemManage.User) {
@@ -356,7 +334,7 @@ onMounted(() => {
     <div class="flex min-h-0 min-w-0 flex-1 flex-col">
       <TablePageLayout :title="$t('page.system.user.listTitle')">
         <template #search>
-          <UserSearch v-model:model="searchParams" @search="handleSearch" />
+          <UserSearch v-model:model="searchParams" @search="search" />
         </template>
 
         <template #actions>
@@ -367,7 +345,7 @@ onMounted(() => {
             :show-batch-delete="checkedRowKeys.length > 0"
             @add="handleAdd"
             @batch-delete="handleBatchDelete"
-            @refresh="handleRefresh"
+            @refresh="refresh"
           >
             <template #prefix>
               <VBtn
@@ -412,7 +390,7 @@ onMounted(() => {
             :hide-default-footer="total === 0"
             hover
             item-value="userId"
-            :items="data"
+            :items="displayRows"
             :items-length="total"
             :items-per-page-options="pageSizeOptions"
             :loading="loading"
@@ -425,7 +403,7 @@ onMounted(() => {
               <div class="flex items-center gap-2.5">
                 <VAvatar color="primary" size="32" variant="tonal">
                   <span class="text-xs font-700">
-                    {{ item.userName.slice(0, 1).toUpperCase() }}
+                    {{ item.initial }}
                   </span>
                 </VAvatar>
                 <span class="font-500">{{ item.userName }}</span>
@@ -511,7 +489,7 @@ onMounted(() => {
         </template>
 
         <template #append>
-          <UserImportDialog v-model:visible="importVisible" @submitted="refreshKey += 1" />
+          <UserImportDialog v-model:visible="importVisible" @submitted="refresh" />
 
           <UserResetPwdDialog
             v-model:visible="resetPwdVisible"

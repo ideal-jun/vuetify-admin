@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useDisplay } from 'vuetify';
 
 import { $t } from '@/locales';
@@ -7,13 +8,15 @@ import { getBusinessTypeLabel, operlogStatusRecord } from './shared';
 
 defineOptions({ name: 'OperlogDetailDialog' });
 
-const props = defineProps<{
+const { row } = defineProps<{
   row: Api.SystemOperlog.Operlog | null;
 }>();
 
 const visible = defineModel<boolean>('visible', { required: true });
 
 const { mobile } = useDisplay();
+
+const businessTypeLabel = computed(() => (row ? getBusinessTypeLabel(row.businessType) : '—'));
 
 function closeDialog() {
   visible.value = false;
@@ -22,7 +25,7 @@ function closeDialog() {
 
 <template>
   <VDialog v-model="visible" :max-width="mobile ? '100%' : 960" scrollable>
-    <VCard v-if="props.row">
+    <VCard v-if="row">
       <VCardTitle class="text-base font-600">
         {{ $t('page.operlog.detail.title') }}
       </VCardTitle>
@@ -33,49 +36,39 @@ function closeDialog() {
         <VRow density="compact">
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.module') }}</div>
-            <div class="mt-1 text-sm">
-              {{ props.row.title }} / {{ getBusinessTypeLabel(props.row.businessType) }}
-            </div>
+            <div class="mt-1 text-sm">{{ row.title }} / {{ businessTypeLabel }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.loginInfo') }}</div>
-            <div class="mt-1 text-sm">
-              {{ props.row.operName || '—' }} / {{ props.row.operIp || '—' }}
-            </div>
+            <div class="mt-1 text-sm">{{ row.operName || '—' }} / {{ row.operIp || '—' }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.deptName') }}</div>
-            <div class="mt-1 text-sm">{{ props.row.deptName || '—' }}</div>
+            <div class="mt-1 text-sm">{{ row.deptName || '—' }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.operLocation') }}</div>
-            <div class="mt-1 text-sm">{{ props.row.operLocation || '—' }}</div>
+            <div class="mt-1 text-sm">{{ row.operLocation || '—' }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.operUrl') }}</div>
-            <div class="mt-1 break-all text-sm">{{ props.row.operUrl || '—' }}</div>
+            <div class="mt-1 break-all text-sm">{{ row.operUrl || '—' }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.requestMethod') }}</div>
-            <div class="mt-1 text-sm">
-              {{ props.row.requestMethod || '—' }} / {{ props.row.method || '—' }}
-            </div>
+            <div class="mt-1 text-sm">{{ row.requestMethod || '—' }} / {{ row.method || '—' }}</div>
           </VCol>
 
           <VCol cols="12" sm="6">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.status') }}</div>
             <div class="mt-1">
-              <VChip
-                :color="props.row.status === '0' ? 'success' : 'error'"
-                size="small"
-                variant="tonal"
-              >
-                {{ $t(operlogStatusRecord[props.row.status]) }}
+              <VChip :color="row.status === '0' ? 'success' : 'error'" size="small" variant="tonal">
+                {{ $t(operlogStatusRecord[row.status]) }}
               </VChip>
             </div>
           </VCol>
@@ -83,29 +76,29 @@ function closeDialog() {
           <VCol cols="12" sm="3">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.costTime') }}</div>
             <div class="mt-1 text-sm">
-              {{ $t('page.operlog.costTimeUnit', { value: props.row.costTime ?? 0 }) }}
+              {{ $t('page.operlog.costTimeUnit', { value: row.costTime ?? 0 }) }}
             </div>
           </VCol>
 
           <VCol cols="12" sm="3">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.operTime') }}</div>
-            <div class="mt-1 text-sm">{{ props.row.operTime || '—' }}</div>
+            <div class="mt-1 text-sm">{{ row.operTime || '—' }}</div>
           </VCol>
 
           <VCol cols="12">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.operParam') }}</div>
-            <pre class="detail-code mt-1">{{ props.row.operParam || '—' }}</pre>
+            <pre class="detail-code mt-1">{{ row.operParam || '—' }}</pre>
           </VCol>
 
           <VCol cols="12">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.jsonResult') }}</div>
-            <pre class="detail-code mt-1">{{ props.row.jsonResult || '—' }}</pre>
+            <pre class="detail-code mt-1">{{ row.jsonResult || '—' }}</pre>
           </VCol>
 
-          <VCol v-if="props.row.status === '1' && props.row.errorMsg" cols="12">
+          <VCol v-if="row.status === '1' && row.errorMsg" cols="12">
             <div class="text-xs opacity-50">{{ $t('page.operlog.detail.errorMsg') }}</div>
             <VAlert class="mt-1" type="error" variant="tonal">
-              {{ props.row.errorMsg }}
+              {{ row.errorMsg }}
             </VAlert>
           </VCol>
         </VRow>

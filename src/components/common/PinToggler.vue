@@ -7,11 +7,11 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'PinToggler' });
 
-const props = defineProps<{
+const { pin } = defineProps<{
   pin?: boolean;
 }>();
 
-const icon = computed(() => (props.pin ? 'mdi-pin-off' : 'mdi-pin'));
+const icon = computed(() => (pin ? 'mdi-pin-off' : 'mdi-pin'));
 </script>
 
 <template>

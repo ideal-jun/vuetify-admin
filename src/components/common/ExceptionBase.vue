@@ -8,7 +8,7 @@ defineOptions({ name: 'ExceptionBase' });
 
 type ExceptionType = '403' | '404' | '500';
 
-const props = defineProps<{
+const { type } = defineProps<{
   /**
    * Exception type
    *
@@ -34,8 +34,8 @@ const titleMap: Record<ExceptionType, string> = {
   '500': 'route.500',
 };
 
-const icon = computed(() => iconMap[props.type]);
-const title = computed(() => t(titleMap[props.type]));
+const icon = computed(() => iconMap[type]);
+const title = computed(() => t(titleMap[type]));
 </script>
 
 <template>

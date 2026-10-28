@@ -9,36 +9,33 @@ import { createTabCssVars } from './shared';
 
 defineOptions({ name: 'PageTab', inheritAttrs: false });
 
-const props = withDefaults(
-  defineProps<{
-    /** The tab style */
-    mode?: PageTabMode;
-    /** Whether the tab is active */
-    active?: boolean;
-    /** Whether the dark mode is enabled */
-    darkMode?: boolean;
-    /** Whether the close button is visible */
-    closable?: boolean;
-    /** Whether the pin icon is visible */
-    pinned?: boolean;
-    /** The active color of the tab */
-    activeColor?: string;
-  }>(),
-  {
-    mode: 'chrome',
-    active: false,
-    darkMode: false,
-    closable: true,
-    pinned: false,
-    activeColor: '#1890ff',
-  },
-);
+const {
+  mode = 'chrome',
+  active = false,
+  darkMode = false,
+  closable = true,
+  pinned = false,
+  activeColor = '#1890ff',
+} = defineProps<{
+  /** The tab style */
+  mode?: PageTabMode;
+  /** Whether the tab is active */
+  active?: boolean;
+  /** Whether the dark mode is enabled */
+  darkMode?: boolean;
+  /** Whether the close button is visible */
+  closable?: boolean;
+  /** Whether the pin icon is visible */
+  pinned?: boolean;
+  /** The active color of the tab */
+  activeColor?: string;
+}>();
 
 const emit = defineEmits<{
   close: [];
 }>();
 
-const cssVars = computed<PageTabCssVars>(() => createTabCssVars(props.activeColor));
+const cssVars = computed<PageTabCssVars>(() => createTabCssVars(activeColor));
 </script>
 
 <template>

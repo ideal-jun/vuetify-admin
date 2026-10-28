@@ -5,7 +5,7 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'HomeSourceChart' });
 
-const props = defineProps<{
+const { sources, total } = defineProps<{
   sources: Api.Home.Sources;
   total: number;
 }>();
@@ -36,7 +36,7 @@ const sourceConfig = computed<{ key: Api.Home.SourceKey; label: string; color: s
 const data = computed(() =>
   sourceConfig.value.map((item) => ({
     ...item,
-    value: props.sources[item.key],
+    value: sources[item.key],
   })),
 );
 
@@ -45,7 +45,7 @@ const totalLabel = computed(() =>
     notation: 'compact',
     maximumFractionDigits: 1,
   })
-    .format(props.total)
+    .format(total)
     .toLowerCase(),
 );
 

@@ -7,28 +7,25 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'MenuToggler' });
 
-const props = withDefaults(
-  defineProps<{
-    collapsed?: boolean;
-    arrowIcon?: boolean;
-    zIndex?: number;
-  }>(),
-  {
-    collapsed: false,
-    arrowIcon: false,
-    zIndex: 98,
-  },
-);
+const {
+  collapsed = false,
+  arrowIcon = false,
+  zIndex = 98,
+} = defineProps<{
+  collapsed?: boolean;
+  arrowIcon?: boolean;
+  zIndex?: number;
+}>();
 
 const icon = computed(() => {
-  if (props.arrowIcon) {
-    return props.collapsed ? 'mdi-chevron-double-right' : 'mdi-chevron-double-left';
+  if (arrowIcon) {
+    return collapsed ? 'mdi-chevron-double-right' : 'mdi-chevron-double-left';
   }
 
-  return props.collapsed ? 'mdi-menu-open' : 'mdi-menu';
+  return collapsed ? 'mdi-menu-open' : 'mdi-menu';
 });
 
-const tooltip = computed(() => (props.collapsed ? $t('icon.expand') : $t('icon.collapse')));
+const tooltip = computed(() => (collapsed ? $t('icon.expand') : $t('icon.collapse')));
 </script>
 
 <template>

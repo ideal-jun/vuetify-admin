@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchDeleteGenTable,
@@ -54,22 +54,27 @@ function createDefaultSearchModel(): Api.ToolGen.GenTableSearchModel {
 
 const searchParams = ref<Api.ToolGen.GenTableSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
+const checkedRowKeys = shallowRef<number[]>([]);
 
-const data = ref<Api.ToolGen.GenTable[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadGenTables,
+  refresh,
+  search,
+} = useTableData<Api.ToolGen.GenTable>({
+  fetchData: (page) => fetchGetGenTableList({ ...searchParams.value, ...page }),
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
+});
 
 const importVisible = ref(false);
 const previewVisible = ref(false);
 const previewTableId = ref<number | null>(null);
 const previewTableName = ref<string | null>(null);
-
-let requestSequence = 0;
 
 const { hasAuth } = useAuth();
 
@@ -79,38 +84,12 @@ const canDelete = computed(() => hasAuth(permissionCodes.genDelete));
 const canPreview = computed(() => hasAuth(permissionCodes.genPreview));
 const canCode = computed(() => hasAuth(permissionCodes.genCode));
 
-const { drawerVisible, editingData, handleEdit, checkedRowKeys } = useTableOperate<
-  Api.ToolGen.GenTable,
-  number
->(data, 'tableId', loadGenTables);
-
-async function loadGenTables() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: tableList, error } = await fetchGetGenTableList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = tableList.rows;
-  total.value = tableList.total;
-}
+const { drawerVisible, editingData, handleEdit } = useTableOperate<Api.ToolGen.GenTable, number>(
+  data,
+  'tableId',
+  loadGenTables,
+  { checkedRowKeys },
+);
 
 function templateLabel(value: Api.ToolGen.TplCategory | null | undefined) {
   if (value === 'crud') {
@@ -143,6 +122,20 @@ function webTypeLabel(value: Api.ToolGen.TplWebType | null | undefined) {
 
   return value ?? '—';
 }
+
+interface GenTableRow extends Api.ToolGen.GenTable {
+  templateLabel: string;
+  webTypeLabel: string;
+}
+
+/** The rows with their display labels derived once per page load instead of per render */
+const displayRows = computed<GenTableRow[]>(() =>
+  data.value.map((table) => ({
+    ...table,
+    templateLabel: templateLabel(table.tplCategory),
+    webTypeLabel: webTypeLabel(table.tplWebType),
+  })),
+);
 
 const baseHeaders = computed<GenTableHeader[]>(() => [
   {
@@ -214,31 +207,12 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadGenTables();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 function handleImported() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
+  search();
 }
 
 function handleSaved() {
-  refreshKey.value += 1;
+  refresh();
 }
 
 function reloadAfterRemove(removedCount: number) {
@@ -246,7 +220,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function openPreview(table: Api.ToolGen.GenTable) {
@@ -316,7 +290,7 @@ function handleSynchDb(table: Api.ToolGen.GenTable) {
 
       window.$message?.success($t('page.gen.messages.syncSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -343,7 +317,7 @@ function handleGenerate(table: Api.ToolGen.GenTable) {
 
       window.$message?.success($t('page.gen.messages.generateSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -352,7 +326,7 @@ function handleGenerate(table: Api.ToolGen.GenTable) {
 <template>
   <TablePageLayout :title="$t('page.gen.listTitle')">
     <template #search>
-      <GenSearch v-model:model="searchParams" @search="handleSearch" />
+      <GenSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -362,7 +336,7 @@ function handleGenerate(table: Api.ToolGen.GenTable) {
         :show-add="false"
         :show-batch-delete="checkedRowKeys.length > 0"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
@@ -396,7 +370,7 @@ function handleGenerate(table: Api.ToolGen.GenTable) {
         :hide-default-footer="total === 0"
         hover
         item-value="tableId"
-        :items="data"
+        :items="displayRows"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
         :loading="loading"
@@ -424,12 +398,12 @@ function handleGenerate(table: Api.ToolGen.GenTable) {
 
         <template #item.tplCategory="{ item }">
           <VChip color="primary" size="small" variant="tonal">
-            {{ templateLabel(item.tplCategory) }}
+            {{ item.templateLabel }}
           </VChip>
         </template>
 
         <template #item.tplWebType="{ item }">
-          <VChip size="small" variant="tonal">{{ webTypeLabel(item.tplWebType) }}</VChip>
+          <VChip size="small" variant="tonal">{{ item.webTypeLabel }}</VChip>
         </template>
 
         <template #item.createTime="{ item }">

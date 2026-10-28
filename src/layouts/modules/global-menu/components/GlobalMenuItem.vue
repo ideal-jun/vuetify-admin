@@ -6,32 +6,28 @@ import { getFirstLeafPath, isMenuActive } from '../shared';
 
 defineOptions({ name: 'GlobalMenuItem' });
 
-const props = withDefaults(
-  defineProps<{
-    item: App.Global.Menu;
-    depth?: number;
-    maxDepth?: number;
-  }>(),
-  {
-    depth: 0,
-    maxDepth: undefined,
-  },
-);
+const {
+  item,
+  depth = 0,
+  maxDepth = undefined,
+} = defineProps<{
+  item: App.Global.Menu;
+  depth?: number;
+  maxDepth?: number;
+}>();
 
 const route = useRoute();
 
 const canExpand = computed(() => {
-  const hasChildren = Boolean(props.item.children?.length);
-  const maxDepth = props.maxDepth ?? Number.POSITIVE_INFINITY;
+  const hasChildren = Boolean(item.children?.length);
+  const depthLimit = maxDepth ?? Number.POSITIVE_INFINITY;
 
-  return hasChildren && props.depth < maxDepth;
+  return hasChildren && depth < depthLimit;
 });
 
-const active = computed(() =>
-  isMenuActive(props.item, String(route.name ?? ''), route.meta.activeMenu),
-);
+const active = computed(() => isMenuActive(item, String(route.name ?? ''), route.meta.activeMenu));
 
-const to = computed(() => getFirstLeafPath(props.item) ?? props.item.routePath);
+const to = computed(() => getFirstLeafPath(item) ?? item.routePath);
 </script>
 
 <template>

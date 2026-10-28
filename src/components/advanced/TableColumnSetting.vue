@@ -8,7 +8,7 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'TableColumnSetting' });
 
-const props = defineProps<{
+const { checks } = defineProps<{
   checks: TableColumnCheck[];
 }>();
 
@@ -16,14 +16,12 @@ const emit = defineEmits<{
   (e: 'update:checks', checks: TableColumnCheck[]): void;
 }>();
 
-const allChecked = computed(() => props.checks.every((check) => check.checked));
+const allChecked = computed(() => checks.every((check) => check.checked));
 
 function toggle(check: TableColumnCheck) {
   emit(
     'update:checks',
-    props.checks.map((item) =>
-      item.key === check.key ? { ...item, checked: !item.checked } : item,
-    ),
+    checks.map((item) => (item.key === check.key ? { ...item, checked: !item.checked } : item)),
   );
 }
 
@@ -32,14 +30,14 @@ function toggleAll() {
 
   emit(
     'update:checks',
-    props.checks.map((item) => ({ ...item, checked })),
+    checks.map((item) => ({ ...item, checked })),
   );
 }
 
 function reset() {
   emit(
     'update:checks',
-    props.checks.map((item) => ({ ...item, checked: true })),
+    checks.map((item) => ({ ...item, checked: true })),
   );
 }
 </script>

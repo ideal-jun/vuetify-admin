@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks } from '@/hooks/common/table';
+import { getColumnChecks, useTableData } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchCleanLogininfors,
@@ -58,46 +58,15 @@ const searchParams = ref<Api.SystemLogininfor.SearchModel>({
   endTime: null,
 });
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
+const checkedRowKeys = shallowRef<number[]>([]);
 
-const data = ref<Api.SystemLogininfor.Logininfor[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-const checkedRowKeys = ref<number[]>([]);
-
-let requestSequence = 0;
-
-async function loadLogininfors() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: logininforList, error } = await fetchGetLogininforList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
+const { data, total, loading, tableOptions, refresh, search } =
+  useTableData<Api.SystemLogininfor.Logininfor>({
+    fetchData: (page) => fetchGetLogininforList({ ...searchParams.value, ...page }),
+    onBeforeLoad: () => {
+      checkedRowKeys.value = [];
+    },
   });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = logininforList.rows;
-  total.value = logininforList.total;
-}
 
 const baseHeaders = computed<LogininforTableHeader[]>(() => [
   {
@@ -183,24 +152,6 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadLogininfors();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 async function handleUnlock(row: Api.SystemLogininfor.Logininfor) {
   const userName = row.userName || '';
 
@@ -246,7 +197,7 @@ function handleBatchDelete() {
 
       window.$message?.success($t('common.deleteSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -266,7 +217,7 @@ function handleClean() {
 
       window.$message?.success($t('page.logininfor.cleanSuccess'));
 
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -277,7 +228,7 @@ function handleClean() {
     <template #search>
       <VCard class="app-panel shrink-0" variant="flat">
         <div class="p-4">
-          <LogininforSearch v-model:model="searchParams" @search="handleSearch" />
+          <LogininforSearch v-model:model="searchParams" @search="search" />
         </div>
       </VCard>
     </template>
@@ -289,7 +240,7 @@ function handleClean() {
         :show-add="false"
         :show-batch-delete="checkedRowKeys.length > 0"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">

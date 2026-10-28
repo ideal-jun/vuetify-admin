@@ -5,27 +5,24 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'DateRangeField' });
 
-const props = withDefaults(
-  defineProps<{
-    /** Override the start date label */
-    beginLabel?: string;
-    /** Override the end date label */
-    endLabel?: string;
-    /** The text field density */
-    density?: 'default' | 'comfortable' | 'compact';
-  }>(),
-  {
-    beginLabel: undefined,
-    endLabel: undefined,
-    density: 'compact',
-  },
-);
+const {
+  beginLabel,
+  endLabel,
+  density = 'compact',
+} = defineProps<{
+  /** Override the start date label */
+  beginLabel?: string;
+  /** Override the end date label */
+  endLabel?: string;
+  /** The text field density */
+  density?: 'default' | 'comfortable' | 'compact';
+}>();
 
 const begin = defineModel<string | null>('begin', { default: null });
 const end = defineModel<string | null>('end', { default: null });
 
-const beginLabel = computed(() => props.beginLabel ?? $t('common.startDate'));
-const endLabel = computed(() => props.endLabel ?? $t('common.endDate'));
+const beginLabelText = computed(() => beginLabel ?? $t('common.startDate'));
+const endLabelText = computed(() => endLabel ?? $t('common.endDate'));
 
 function formatDate(value: unknown) {
   if (value instanceof Date) {
@@ -66,7 +63,7 @@ const endDate = computed<unknown>({
       clearable
       :density="density"
       hide-details
-      :label="beginLabel"
+      :label="beginLabelText"
       prepend-icon=""
       :prepend-inner-icon="'mdi-calendar-start'"
       variant="outlined"
@@ -78,7 +75,7 @@ const endDate = computed<unknown>({
       clearable
       :density="density"
       hide-details
-      :label="endLabel"
+      :label="endLabelText"
       prepend-icon=""
       :prepend-inner-icon="'mdi-calendar-end'"
       variant="outlined"

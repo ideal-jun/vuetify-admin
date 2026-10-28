@@ -6,17 +6,12 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'ThemeSchemaSwitch' });
 
-const props = withDefaults(
-  defineProps<{
-    /** Theme scheme */
-    themeSchema: UnionKey.ThemeScheme;
-    /** Show tooltip */
-    showTooltip?: boolean;
-  }>(),
-  {
-    showTooltip: true,
-  },
-);
+const { themeSchema, showTooltip = true } = defineProps<{
+  /** Theme scheme */
+  themeSchema: UnionKey.ThemeScheme;
+  /** Show tooltip */
+  showTooltip?: boolean;
+}>();
 
 const emit = defineEmits<{
   (e: 'switch'): void;
@@ -28,9 +23,9 @@ const icons: Record<UnionKey.ThemeScheme, string> = {
   auto: 'mdi-theme-light-dark',
 };
 
-const icon = computed(() => icons[props.themeSchema]);
+const icon = computed(() => icons[themeSchema]);
 
-const tooltipContent = computed(() => (props.showTooltip ? $t('icon.themeSchema') : ''));
+const tooltipContent = computed(() => (showTooltip ? $t('icon.themeSchema') : ''));
 </script>
 
 <template>

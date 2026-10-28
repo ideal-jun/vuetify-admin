@@ -9,26 +9,24 @@ import GlobalLogo from '../global-logo/index.vue';
 
 defineOptions({ name: 'GlobalSider' });
 
-const props = withDefaults(
-  defineProps<{
-    /** The expanded width of the drawer */
-    width: number;
-    /** The width of the native rail */
-    railWidth?: number;
-    /** Whether the drawer is rendered as a Vuetify rail */
-    rail?: boolean;
-    /** The layout order, the mix layout uses it to place the second drawer */
-    order?: number;
-    /** Whether to show the logo */
-    showLogo?: boolean;
-  }>(),
-  {
-    railWidth: 76,
-    rail: false,
-    order: 0,
-    showLogo: true,
-  },
-);
+const {
+  width,
+  railWidth = 76,
+  rail = false,
+  order = 0,
+  showLogo = true,
+} = defineProps<{
+  /** The expanded width of the drawer */
+  width: number;
+  /** The width of the native rail */
+  railWidth?: number;
+  /** Whether the drawer is rendered as a Vuetify rail */
+  rail?: boolean;
+  /** The layout order, the mix layout uses it to place the second drawer */
+  order?: number;
+  /** Whether to show the logo */
+  showLogo?: boolean;
+}>();
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();
@@ -36,7 +34,7 @@ const { mobile } = useDisplay();
 
 const isMobile = computed(() => mobile.value || appStore.isMobile);
 
-const rail = computed(() => props.rail && !isMobile.value);
+const isRail = computed(() => rail && !isMobile.value);
 
 const open = computed({
   get: () => (isMobile.value ? !appStore.siderCollapse : true),
@@ -60,14 +58,14 @@ watch(isMobile, (value, oldValue) => {
     expand-on-hover
     :order="order"
     :permanent="!isMobile"
-    :rail="rail"
+    :rail="isRail"
     :rail-width="railWidth"
     :temporary="isMobile"
     :theme="themeStore.sider.inverted ? 'dark' : undefined"
     :width="width"
   >
     <template v-if="showLogo" #prepend>
-      <GlobalLogo class="w-full" :show-title="!rail" />
+      <GlobalLogo class="w-full" :show-title="!isRail" />
       <VDivider />
     </template>
 

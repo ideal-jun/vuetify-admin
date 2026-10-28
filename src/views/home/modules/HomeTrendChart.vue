@@ -5,7 +5,7 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'HomeTrendChart' });
 
-const props = defineProps<{
+const { thisWeek, lastWeek } = defineProps<{
   thisWeek: number[];
   lastWeek: number[];
 }>();
@@ -14,7 +14,7 @@ const width = 640;
 const height = 240;
 const padding = { top: 20, right: 16, bottom: 32, left: 36 };
 
-const maxValue = computed(() => Math.max(1, ...props.thisWeek, ...props.lastWeek) + 10);
+const maxValue = computed(() => Math.max(1, ...thisWeek, ...lastWeek) + 10);
 
 function pointsOf(values: number[]) {
   const innerWidth = width - padding.left - padding.right;
@@ -32,8 +32,8 @@ function pointsOf(values: number[]) {
     .join(' ');
 }
 
-const thisWeekPoints = computed(() => pointsOf(props.thisWeek));
-const lastWeekPoints = computed(() => pointsOf(props.lastWeek));
+const thisWeekPoints = computed(() => pointsOf(thisWeek));
+const lastWeekPoints = computed(() => pointsOf(lastWeek));
 
 const areaPoints = computed(() => {
   const innerWidth = width - padding.left - padding.right;

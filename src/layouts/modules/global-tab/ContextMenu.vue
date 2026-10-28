@@ -6,7 +6,7 @@ import { useTabMenu } from './use-tab-menu';
 
 defineOptions({ name: 'TabContextMenu' });
 
-const props = defineProps<{
+const { x, y, tabId } = defineProps<{
   x: number;
   y: number;
   tabId: string;
@@ -16,7 +16,7 @@ const visible = defineModel<boolean>('visible', { default: false });
 
 const { getMenuOptions, runTabAction } = useTabMenu();
 
-const options = computed(() => getMenuOptions(props.tabId));
+const options = computed(() => getMenuOptions(tabId));
 
 const MENU_WIDTH = 200;
 const MENU_ITEM_HEIGHT = 40;
@@ -28,8 +28,8 @@ const menuStyle = computed(() => {
   const maxY = Math.max(MENU_PADDING, window.innerHeight - height - MENU_PADDING);
 
   return {
-    left: `${Math.min(Math.max(props.x, MENU_PADDING), maxX)}px`,
-    top: `${Math.min(Math.max(props.y, MENU_PADDING), maxY)}px`,
+    left: `${Math.min(Math.max(x, MENU_PADDING), maxX)}px`,
+    top: `${Math.min(Math.max(y, MENU_PADDING), maxY)}px`,
   };
 });
 
@@ -48,7 +48,7 @@ useEventListener(window, 'keydown', (event) => {
 async function handleSelect(key: App.Global.DropdownKey) {
   closeMenu();
 
-  await runTabAction(key, props.tabId);
+  await runTabAction(key, tabId);
 }
 </script>
 

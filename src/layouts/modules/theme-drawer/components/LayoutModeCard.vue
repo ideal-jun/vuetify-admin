@@ -14,7 +14,7 @@ interface Props {
   disabled?: boolean;
 }
 
-const props = defineProps<Props>();
+const { mode, disabled } = defineProps<Props>();
 
 interface Emits {
   /** Layout mode change */
@@ -66,7 +66,7 @@ const layoutConfig: LayoutConfig = {
 };
 
 function handleChangeMode(mode: UnionKey.ThemeLayoutMode) {
-  if (props.disabled) {
+  if (disabled) {
     return;
   }
 

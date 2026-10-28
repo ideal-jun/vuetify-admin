@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
 import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
-import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import type { TableColumnCheck, TablePageRequest } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchBatchDeleteConfig,
@@ -54,54 +54,38 @@ function createDefaultSearchModel(): Api.SystemManage.ConfigSearchModel {
 
 const searchParams = ref<Api.SystemManage.ConfigSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
-
-const data = ref<Api.SystemManage.Config[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-
-let requestSequence = 0;
+const checkedRowKeys = shallowRef<number[]>([]);
 
 /** Build the backend query params, the date range uses the Spring "params[...]" convention */
-function buildSearchParams(): Api.SystemManage.ConfigSearchParams {
+function buildSearchParams({
+  pageNum,
+  pageSize,
+}: TablePageRequest): Api.SystemManage.ConfigSearchParams {
   const { beginTime, endTime, ...rest } = searchParams.value;
 
   return {
     ...rest,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
+    pageNum,
+    pageSize,
     ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
     ...(endTime ? { 'params[endTime]': endTime } : {}),
   };
 }
 
-async function loadConfigs() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: configList, error } = await fetchGetConfigList(buildSearchParams());
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = configList.rows;
-  total.value = configList.total;
-}
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadConfigs,
+  refresh,
+  search,
+} = useTableData<Api.SystemManage.Config>({
+  fetchData: (page) => fetchGetConfigList(buildSearchParams(page)),
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
+});
 
 const { hasAuth } = useAuth();
 
@@ -109,8 +93,10 @@ const canAdd = computed(() => hasAuth(permissionCodes.configAdd));
 const canEdit = computed(() => hasAuth(permissionCodes.configEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.configDelete));
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.Config, number>(data, 'configId', loadConfigs);
+const { drawerVisible, operateType, editingData, handleAdd, handleEdit } = useTableOperate<
+  Api.SystemManage.Config,
+  number
+>(data, 'configId', loadConfigs, { checkedRowKeys });
 
 const configTypeOptions = computed<CommonType.Option<Api.SystemManage.ConfigType>[]>(() => [
   { label: $t('page.config.type.yes'), value: 'Y' },
@@ -186,30 +172,14 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadConfigs();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 function handleSubmitted() {
   if (operateType.value === 'add') {
-    tableOptions.page = 1;
+    search();
+
+    return;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleRefreshCache() {
@@ -235,7 +205,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleDelete(config: Api.SystemManage.Config) {
@@ -288,7 +258,7 @@ function handleBatchDelete() {
 <template>
   <TablePageLayout :title="$t('page.config.listTitle')">
     <template #search>
-      <ConfigSearch v-model:model="searchParams" @search="handleSearch" />
+      <ConfigSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -299,7 +269,7 @@ function handleBatchDelete() {
         :show-batch-delete="checkedRowKeys.length > 0"
         @add="handleAdd"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">

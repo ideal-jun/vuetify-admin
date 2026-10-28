@@ -21,7 +21,7 @@ interface Props {
   rowData?: Api.SystemDict.DictType | null;
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -38,7 +38,7 @@ const submitting = ref(false);
 const model = ref<Api.SystemDict.DictTypeForm>(createDefaultModel());
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.dict.type.add') : $t('page.dict.type.edit'),
+  operateType === 'add' ? $t('page.dict.type.add') : $t('page.dict.type.edit'),
 );
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
@@ -70,16 +70,27 @@ function applyRow(row: Api.SystemDict.DictType) {
   };
 }
 
-async function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    applyRow(props.rowData);
+let initSequence = 0;
 
-    const { data: detail, error } = await fetchGetDictTypeDetail(props.rowData.dictId);
+async function initModel(sequence: number) {
+  if (operateType === 'edit' && rowData) {
+    applyRow(rowData);
+
+    const { data: detail, error } = await fetchGetDictTypeDetail(rowData.dictId);
+
+    // A newer open owns the drawer now, this response is stale
+    if (sequence !== initSequence || !rowData) {
+      return;
+    }
 
     if (!error && detail) {
       applyRow(detail);
     }
 
+    return;
+  }
+
+  if (sequence !== initSequence) {
     return;
   }
 
@@ -100,7 +111,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreateDictType({ ...model.value });
 
       if (error) {
@@ -109,13 +120,13 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const { error } = await fetchUpdateDictType({
         ...model.value,
-        dictId: props.rowData.dictId,
+        dictId: rowData.dictId,
       });
 
       if (error) {
@@ -137,7 +148,14 @@ watch(visible, async (value) => {
     return;
   }
 
-  await initModel();
+  const sequence = ++initSequence;
+
+  await initModel(sequence);
+
+  if (sequence !== initSequence) {
+    return;
+  }
+
   resetValidation();
 });
 </script>

@@ -27,7 +27,7 @@ interface DictDataModel extends Api.SystemDict.DictDataForm {
   dictCode?: number;
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData, dictType } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -44,7 +44,7 @@ const submitting = ref(false);
 const model = ref<DictDataModel>(createDefaultModel());
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.dict.data.add') : $t('page.dict.data.edit'),
+  operateType === 'add' ? $t('page.dict.data.add') : $t('page.dict.data.edit'),
 );
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
@@ -69,7 +69,7 @@ const rules = computed(() => {
 
 function createDefaultModel(): DictDataModel {
   return {
-    dictType: props.dictType,
+    dictType: dictType,
     dictLabel: '',
     dictValue: '',
     dictSort: 1,
@@ -94,16 +94,27 @@ function applyRow(row: Api.SystemDict.DictData) {
   };
 }
 
-async function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    applyRow(props.rowData);
+let initSequence = 0;
 
-    const { data: detail, error } = await fetchGetDictDataDetail(props.rowData.dictCode);
+async function initModel(sequence: number) {
+  if (operateType === 'edit' && rowData) {
+    applyRow(rowData);
+
+    const { data: detail, error } = await fetchGetDictDataDetail(rowData.dictCode);
+
+    // A newer open owns the drawer now, this response is stale
+    if (sequence !== initSequence || !rowData) {
+      return;
+    }
 
     if (!error && detail) {
       applyRow(detail);
     }
 
+    return;
+  }
+
+  if (sequence !== initSequence) {
     return;
   }
 
@@ -124,7 +135,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreateDictData({
         dictType: model.value.dictType,
         dictLabel: model.value.dictLabel,
@@ -142,12 +153,12 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const { error } = await fetchUpdateDictData({
-        dictCode: props.rowData.dictCode,
+        dictCode: rowData.dictCode,
         dictType: model.value.dictType,
         dictLabel: model.value.dictLabel,
         dictValue: model.value.dictValue,
@@ -177,14 +188,21 @@ watch(visible, async (value) => {
     return;
   }
 
-  await initModel();
+  const sequence = ++initSequence;
+
+  await initModel(sequence);
+
+  if (sequence !== initSequence) {
+    return;
+  }
+
   resetValidation();
 });
 
 watch(
-  () => props.dictType,
+  () => dictType,
   (dictType) => {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       model.value.dictType = dictType;
     }
   },

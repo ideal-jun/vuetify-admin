@@ -1,14 +1,9 @@
 <script setup lang="ts">
 defineOptions({ name: 'DarkModeContainer' });
 
-withDefaults(
-  defineProps<{
-    inverted?: boolean;
-  }>(),
-  {
-    inverted: false,
-  },
-);
+const { inverted = false } = defineProps<{
+  inverted?: boolean;
+}>();
 </script>
 
 <template>

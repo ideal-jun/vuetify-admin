@@ -3,7 +3,7 @@ import { computed } from 'vue';
 
 defineOptions({ name: 'Watermark' });
 
-const props = defineProps<{
+const { content } = defineProps<{
   content: string;
 }>();
 
@@ -21,7 +21,7 @@ const items = computed(() => Array.from({ length: 40 }, (_, index) => index));
         top: `${Math.floor(item / 8) * 22}%`,
       }"
     >
-      {{ props.content }}
+      {{ content }}
     </span>
   </div>
 </template>

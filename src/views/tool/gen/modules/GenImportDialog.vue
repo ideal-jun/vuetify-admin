@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
+import { useTableData } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { fetchGetDbTableList, fetchImportGenTables } from '@/service/api/tool-gen';
 
@@ -31,18 +32,23 @@ function createDefaultSearchModel(): Api.ToolGen.GenTableSearchModel {
 
 const searchParams = ref<Api.ToolGen.GenTableSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
-
-const rows = ref<Api.ToolGen.DbTable[]>([]);
-const total = ref(0);
-const loading = ref(false);
 const importing = ref(false);
-const refreshKey = ref(0);
 
 const checkedTables = ref<string[]>([]);
+
+const {
+  data: rows,
+  total,
+  loading,
+  tableOptions,
+  search,
+} = useTableData<Api.ToolGen.DbTable>({
+  fetchData: (page) => fetchGetDbTableList({ ...searchParams.value, ...page }),
+  enabled: () => visible.value,
+  onBeforeLoad: () => {
+    checkedTables.value = [];
+  },
+});
 
 const tplWebType = ref<Api.ToolGen.TplWebType>('element-plus');
 
@@ -64,44 +70,9 @@ const headers = computed<DbTableHeader[]>(() => [
   { key: 'updateTime', title: $t('page.gen.columns.updateTime'), width: 180, sortable: false },
 ]);
 
-let requestSequence = 0;
-
-async function loadDbTables() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data, error } = await fetchGetDbTableList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    rows.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  rows.value = data.rows;
-  total.value = data.total;
-}
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
 function handleReset() {
   searchParams.value = createDefaultSearchModel();
-  handleSearch();
+  search();
 }
 
 async function handleImport() {
@@ -136,22 +107,9 @@ watch(visible, (value) => {
     return;
   }
 
-  checkedTables.value = [];
   searchParams.value = createDefaultSearchModel();
-  tableOptions.page = 1;
-  refreshKey.value += 1;
+  search();
 });
-
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    if (visible.value) {
-      checkedTables.value = [];
-      void loadDbTables();
-    }
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -181,7 +139,7 @@ watch(
             VSelect: { density: 'compact', color: 'primary' },
           }"
         >
-          <VForm @submit.prevent="handleSearch">
+          <VForm @submit.prevent="search">
             <VRow density="compact">
               <VCol cols="12" md="3" sm="6">
                 <VTextField

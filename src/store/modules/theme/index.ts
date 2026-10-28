@@ -331,6 +331,8 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
     scope.stop();
   });
 
+  // `settings` is mutated in place (applySettings and $reset merge into it), never
+  // replaced, so these property refs keep pointing at the live store state.
   return {
     ...toRefs(settings.value),
     darkMode,

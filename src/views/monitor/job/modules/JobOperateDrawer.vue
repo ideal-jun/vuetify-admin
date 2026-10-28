@@ -20,7 +20,7 @@ interface Props {
   jobGroupOptions: CommonType.Option<string>[];
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData, jobGroupOptions } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -35,9 +35,7 @@ const submitting = ref(false);
 
 const model = ref<Api.MonitorJob.JobForm>(createDefaultModel());
 
-const title = computed(() =>
-  props.operateType === 'add' ? $t('page.job.add') : $t('page.job.edit'),
-);
+const title = computed(() => (operateType === 'add' ? $t('page.job.add') : $t('page.job.edit')));
 
 const misfirePolicyOptions = computed<CommonType.Option<string>[]>(() => [
   { label: $t('page.job.misfirePolicy.immediate'), value: '1' },
@@ -85,9 +83,9 @@ function createDefaultModel(): Api.MonitorJob.JobForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
+  if (operateType === 'edit' && rowData) {
     const { jobName, jobGroup, invokeTarget, cronExpression, misfirePolicy, concurrent, status } =
-      props.rowData;
+      rowData;
 
     model.value = {
       jobName,
@@ -125,16 +123,16 @@ async function handleSubmit() {
   try {
     const payload: Api.MonitorJob.JobForm = jsonClone(model.value);
     const { error } =
-      props.operateType === 'add'
+      operateType === 'add'
         ? await fetchCreateJob(payload)
-        : await fetchUpdateJob({ ...payload, jobId: props.rowData?.jobId ?? 0 });
+        : await fetchUpdateJob({ ...payload, jobId: rowData?.jobId ?? 0 });
 
     if (error) {
       return;
     }
 
     window.$message?.success(
-      props.operateType === 'add' ? $t('common.addSuccess') : $t('common.updateSuccess'),
+      operateType === 'add' ? $t('common.addSuccess') : $t('common.updateSuccess'),
     );
 
     closeDrawer();

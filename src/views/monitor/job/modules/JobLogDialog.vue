@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import DateRangeField from '@/components/advanced/DateRangeField.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
+import { useTableData } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchCleanJobLogs,
@@ -20,7 +21,7 @@ interface Props {
   job?: Api.MonitorJob.Job | null;
 }
 
-const props = defineProps<Props>();
+const { job } = defineProps<Props>();
 
 const visible = defineModel<boolean>('visible', { required: true });
 
@@ -42,16 +43,22 @@ function createDefaultSearchModel(): Api.MonitorJob.JobLogSearchModel {
 
 const searchParams = ref<Api.MonitorJob.JobLogSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
-
-const logs = ref<Api.MonitorJob.JobLog[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
 const checkedLogIds = ref<number[]>([]);
+
+const {
+  data: logs,
+  total,
+  loading,
+  tableOptions,
+  refresh,
+  search,
+} = useTableData<Api.MonitorJob.JobLog>({
+  fetchData: (page) => fetchGetJobLogList({ ...searchParams.value, ...page }),
+  enabled: () => visible.value,
+  onBeforeLoad: () => {
+    checkedLogIds.value = [];
+  },
+});
 
 const jobGroupOptions = computed<CommonType.Option<string>[]>(() => [
   { label: $t('page.job.groups.default'), value: 'DEFAULT' },
@@ -102,41 +109,30 @@ function statusLabel(status: Api.MonitorJob.JobStatus) {
   return status === '0' ? $t('page.job.log.status.success') : $t('page.job.log.status.fail');
 }
 
-async function loadLogs() {
-  loading.value = true;
-
-  const { data: logList, error } = await fetchGetJobLogList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  loading.value = false;
-
-  if (error) {
-    logs.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  logs.value = logList.rows;
-  total.value = logList.total;
+interface JobLogTableRow extends Api.MonitorJob.JobLog {
+  jobGroupLabel: string;
+  statusLabel: string;
+  createTimeLabel: string;
 }
 
+/** The rows with their display labels derived once per page load instead of per render */
+const displayRows = computed<JobLogTableRow[]>(() =>
+  logs.value.map((log) => ({
+    ...log,
+    jobGroupLabel: groupLabel(log.jobGroup),
+    statusLabel: statusLabel(log.status),
+    createTimeLabel: formatDateTime(log.createTime),
+  })),
+);
+
 function resetSearch() {
-  const { jobName, jobGroup } = props.job ?? {};
+  const { jobName, jobGroup } = job ?? {};
 
   searchParams.value = {
     ...createDefaultSearchModel(),
     jobName: jobName ?? null,
     jobGroup: jobGroup ?? null,
   };
-}
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
 }
 
 function handleDelete() {
@@ -160,7 +156,7 @@ function handleDelete() {
 
       window.$message?.success($t('page.job.log.deleteSuccess'));
       checkedLogIds.value = [];
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -180,40 +176,20 @@ function handleClean() {
 
       window.$message?.success($t('page.job.log.cleanSuccess'));
       checkedLogIds.value = [];
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    if (visible.value) {
-      checkedLogIds.value = [];
-      void loadLogs();
-    }
-  },
-  { immediate: true },
-);
-
-watch(visible, (value) => {
-  if (value) {
-    tableOptions.page = 1;
-    resetSearch();
-    refreshKey.value += 1;
+watch([visible, () => job], ([isVisible]) => {
+  if (!isVisible) {
+    return;
   }
-});
 
-watch(
-  () => props.job,
-  () => {
-    if (visible.value) {
-      tableOptions.page = 1;
-      resetSearch();
-      refreshKey.value += 1;
-    }
-  },
-);
+  tableOptions.page = 1;
+  resetSearch();
+  search();
+});
 </script>
 
 <template>
@@ -249,7 +225,7 @@ watch(
             VSelect: { density: 'compact', color: 'primary' },
           }"
         >
-          <VForm @submit.prevent="handleSearch">
+          <VForm @submit.prevent="search">
             <VRow density="compact">
               <VCol cols="12" lg="2" md="4" sm="6">
                 <VTextField
@@ -319,7 +295,7 @@ watch(
           {{ $t('page.job.log.clean') }}
         </VBtn>
 
-        <VBtn prepend-icon="mdi-refresh" variant="text" @click="handleSearch">
+        <VBtn prepend-icon="mdi-refresh" variant="text" @click="search">
           {{ $t('common.refresh') }}
         </VBtn>
       </VCardText>
@@ -335,7 +311,7 @@ watch(
         :hide-default-footer="total === 0"
         hover
         item-value="jobLogId"
-        :items="logs"
+        :items="displayRows"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
         :loading="loading"
@@ -353,7 +329,7 @@ watch(
         </template>
 
         <template #item.jobGroup="{ item }">
-          <VChip size="x-small" variant="tonal">{{ groupLabel(item.jobGroup) }}</VChip>
+          <VChip size="x-small" variant="tonal">{{ item.jobGroupLabel }}</VChip>
         </template>
 
         <template #item.invokeTarget="{ item }">
@@ -366,7 +342,7 @@ watch(
 
         <template #item.status="{ item }">
           <VChip :color="item.status === '0' ? 'success' : 'error'" size="small" variant="tonal">
-            {{ statusLabel(item.status) }}
+            {{ item.statusLabel }}
           </VChip>
         </template>
 
@@ -380,7 +356,7 @@ watch(
         </template>
 
         <template #item.createTime="{ item }">
-          <span class="text-xs opacity-60">{{ formatDateTime(item.createTime) }}</span>
+          <span class="text-xs opacity-60">{{ item.createTimeLabel }}</span>
         </template>
 
         <template #no-data>

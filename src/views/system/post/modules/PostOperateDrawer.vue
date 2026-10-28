@@ -17,9 +17,7 @@ interface Props {
   rowData?: Api.SystemManage.Post | null;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  rowData: null,
-});
+const { operateType, rowData = null } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -35,9 +33,7 @@ const submitting = ref(false);
 
 const model = ref<Api.SystemManage.PostForm>(createDefaultModel());
 
-const title = computed(() =>
-  props.operateType === 'add' ? $t('page.post.add') : $t('page.post.edit'),
-);
+const title = computed(() => (operateType === 'add' ? $t('page.post.add') : $t('page.post.edit')));
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
 
@@ -62,8 +58,8 @@ function createDefaultModel(): Api.SystemManage.PostForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { postCode, postName, postSort, status, remark } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { postCode, postName, postSort, status, remark } = rowData;
 
     model.value = {
       postCode,
@@ -93,7 +89,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const { error } = await fetchCreatePost({ ...model.value });
 
       if (error) {
@@ -102,11 +98,11 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
-      const { error } = await fetchUpdatePost({ ...model.value, postId: props.rowData.postId });
+      const { error } = await fetchUpdatePost({ ...model.value, postId: rowData.postId });
 
       if (error) {
         return;

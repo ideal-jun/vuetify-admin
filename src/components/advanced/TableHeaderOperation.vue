@@ -5,27 +5,24 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'TableHeaderOperation' });
 
-withDefaults(
-  defineProps<{
-    /** Whether the table is loading */
-    loading?: boolean;
-    /** Whether to show the add button */
-    showAdd?: boolean;
-    /** Whether the batch delete button is enabled */
-    showBatchDelete?: boolean;
-    /** Whether the current user can batch delete */
-    canBatchDelete?: boolean;
-    /** Whether the operation is disabled */
-    disabled?: boolean;
-  }>(),
-  {
-    loading: false,
-    showAdd: true,
-    showBatchDelete: true,
-    canBatchDelete: true,
-    disabled: false,
-  },
-);
+const {
+  loading = false,
+  showAdd = true,
+  showBatchDelete = true,
+  canBatchDelete = true,
+  disabled = false,
+} = defineProps<{
+  /** Whether the table is loading */
+  loading?: boolean;
+  /** Whether to show the add button */
+  showAdd?: boolean;
+  /** Whether the batch delete button is enabled */
+  showBatchDelete?: boolean;
+  /** Whether the current user can batch delete */
+  canBatchDelete?: boolean;
+  /** Whether the operation is disabled */
+  disabled?: boolean;
+}>();
 
 const emit = defineEmits<{
   add: [];

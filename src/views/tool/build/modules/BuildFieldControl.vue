@@ -13,16 +13,14 @@ interface Props {
   disabled?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-});
+const { field, modelValue, disabled = false } = defineProps<Props>();
 
 const emit = defineEmits<{
   'update:model-value': [value: unknown];
 }>();
 
 const textValue = computed(() => {
-  const value = props.modelValue;
+  const value = modelValue;
 
   if (typeof value === 'string') {
     return value;
@@ -31,50 +29,46 @@ const textValue = computed(() => {
   return value === null || value === undefined ? '' : String(value);
 });
 
-const numberValue = computed(() =>
-  typeof props.modelValue === 'number' ? props.modelValue : null,
-);
+const numberValue = computed(() => (typeof modelValue === 'number' ? modelValue : null));
 
 const sliderValue = computed(() =>
-  typeof props.modelValue === 'number' ? props.modelValue : (props.field.min ?? 0),
+  typeof modelValue === 'number' ? modelValue : (field.min ?? 0),
 );
 
-const booleanValue = computed(() => Boolean(props.modelValue));
+const booleanValue = computed(() => Boolean(modelValue));
 
-const arrayValue = computed<unknown[]>(() =>
-  Array.isArray(props.modelValue) ? props.modelValue : [],
-);
+const arrayValue = computed<unknown[]>(() => (Array.isArray(modelValue) ? modelValue : []));
 
 const scalarValue = computed(() => {
-  const value = props.modelValue;
+  const value = modelValue;
 
   return typeof value === 'string' || typeof value === 'number' ? value : null;
 });
 
-const isDisabled = computed(() => props.disabled || props.field.disabled);
+const isDisabled = computed(() => disabled || field.disabled);
 
 const displayLabel = computed(() => {
-  const withStar = props.field.required && props.field.type !== 'button';
+  const withStar = field.required && field.type !== 'button';
 
-  return withStar ? props.field.label + ' *' : props.field.label;
+  return withStar ? field.label + ' *' : field.label;
 });
 
 const rules = computed<App.Global.FormRule[]>(() => {
-  if (!props.field.required) {
+  if (!field.required) {
     return [];
   }
 
   const message = $t('page.build.validation.required');
 
-  if (props.field.type === 'checkbox') {
+  if (field.type === 'checkbox') {
     return [(value: unknown) => (Array.isArray(value) && value.length > 0 ? true : message)];
   }
 
-  if (props.field.type === 'number') {
+  if (field.type === 'number') {
     return [(value: unknown) => (typeof value === 'number' ? true : message)];
   }
 
-  if (['switch', 'slider', 'button'].includes(props.field.type)) {
+  if (['switch', 'slider', 'button'].includes(field.type)) {
     return [];
   }
 

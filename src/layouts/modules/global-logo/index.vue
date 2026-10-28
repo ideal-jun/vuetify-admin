@@ -4,15 +4,10 @@ import { $t } from '@/locales';
 
 defineOptions({ name: 'GlobalLogo' });
 
-withDefaults(
-  defineProps<{
-    /** Whether to show the title */
-    showTitle?: boolean;
-  }>(),
-  {
-    showTitle: true,
-  },
-);
+const { showTitle = true } = defineProps<{
+  /** Whether to show the title */
+  showTitle?: boolean;
+}>();
 </script>
 
 <template>

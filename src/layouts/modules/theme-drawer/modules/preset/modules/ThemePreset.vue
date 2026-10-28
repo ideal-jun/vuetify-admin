@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defu } from 'defu';
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { $t } from '@/locales';
 import { useThemeStore } from '@/store/modules/theme';
@@ -44,14 +45,22 @@ const presetModules = import.meta.glob('/src/theme/preset/*.json', {
 
 const themeStore = useThemeStore();
 
-const presets = computed(() =>
-  Object.entries(presetModules)
+const { locale } = useI18n();
+
+const presets = computed(() => {
+  // Track the locale so the translated names follow a language switch.
+  void locale.value;
+
+  return Object.entries(presetModules)
     .map(([path, presetData]) => {
       const fileName = path.split('/').pop()?.replace('.json', '') || '';
+      const preset = presetData as ThemePreset;
 
       return {
         id: fileName,
-        ...(presetData as ThemePreset),
+        ...preset,
+        name: getPresetName(preset),
+        desc: getPresetDesc(preset),
       };
     })
     .toSorted((a, b) => {
@@ -64,8 +73,8 @@ const presets = computed(() =>
       }
 
       return a.name.localeCompare(b.name);
-    }),
-);
+    });
+});
 
 function getPresetName(preset: ThemePreset) {
   if (!preset.i18nkey) {
@@ -127,7 +136,7 @@ function applyPreset(preset: ThemePreset & { id: string }) {
       <div class="mb-2 flex items-center justify-between">
         <div class="min-w-0 w-full flex flex-1 items-center justify-between gap-2">
           <h5 class="m-0 truncate text-sm text-primary font-600">
-            {{ getPresetName(preset) }}
+            {{ preset.name }}
           </h5>
           <VChip class="flex-shrink-0 opacity-80" color="info" size="x-small" variant="tonal">
             v{{ preset.version }}
@@ -146,7 +155,7 @@ function applyPreset(preset: ThemePreset & { id: string }) {
         </VBtn>
       </div>
 
-      <p class="line-clamp-2 mb-3 text-xs text-gray-500 leading-4">{{ getPresetDesc(preset) }}</p>
+      <p class="line-clamp-2 mb-3 text-xs text-gray-500 leading-4">{{ preset.desc }}</p>
 
       <div class="flex items-center justify-between">
         <div class="flex gap-1">

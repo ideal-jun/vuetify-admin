@@ -4,75 +4,70 @@ import { computed, nextTick, ref, watch } from 'vue';
 
 defineOptions({ name: 'CountTo' });
 
-const props = withDefaults(
-  defineProps<{
-    startValue?: number;
-    endValue?: number;
-    duration?: number;
-    autoplay?: boolean;
-    decimals?: number;
-    prefix?: string;
-    suffix?: string;
-    separator?: string;
-    decimal?: string;
-    useEasing?: boolean;
-    transition?: keyof typeof TransitionPresets;
-  }>(),
-  {
-    startValue: 0,
-    endValue: 2021,
-    duration: 1500,
-    autoplay: true,
-    decimals: 0,
-    prefix: '',
-    suffix: '',
-    separator: ',',
-    decimal: '.',
-    useEasing: true,
-    transition: 'easeOutExpo',
-  },
-);
+const {
+  startValue = 0,
+  endValue = 2021,
+  duration = 1500,
+  autoplay = true,
+  decimals = 0,
+  prefix = '',
+  suffix = '',
+  separator = ',',
+  decimal = '.',
+  useEasing = true,
+  transition = 'easeOutExpo',
+} = defineProps<{
+  startValue?: number;
+  endValue?: number;
+  duration?: number;
+  autoplay?: boolean;
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+  separator?: string;
+  decimal?: string;
+  useEasing?: boolean;
+  transition?: keyof typeof TransitionPresets;
+}>();
 
-const source = ref(props.startValue);
+const source = ref(startValue);
 
-const transition = computed(() =>
-  props.useEasing ? TransitionPresets[props.transition] : undefined,
-);
+const transitionPreset = computed(() => (useEasing ? TransitionPresets[transition] : undefined));
 
 const outputValue = useTransition(source, {
-  duration: props.duration,
-  transition: transition.value,
+  duration,
+  transition: transitionPreset.value,
 });
 
 const value = computed(() => {
-  let number = outputValue.value.toFixed(props.decimals);
+  let number = outputValue.value.toFixed(decimals);
 
   const parts = number.split('.');
   let integer = parts[0] ?? '0';
-  const decimalPart = parts.length > 1 ? props.decimal + parts[1] : '';
+  const decimalPart = parts.length > 1 ? decimal + parts[1] : '';
 
   const rgx = /(\d+)(\d{3})/;
 
-  if (props.separator) {
+  if (separator) {
     while (rgx.test(integer)) {
-      integer = integer.replace(rgx, `$1${props.separator}$2`);
+      integer = integer.replace(rgx, `$1${separator}$2`);
     }
   }
 
   number = integer + decimalPart;
 
-  return props.prefix + number + props.suffix;
+  return prefix + number + suffix;
 });
 
 async function start() {
   await nextTick();
-  source.value = props.endValue;
+  source.value = endValue;
 }
 
 watch(
-  [() => props.startValue, () => props.endValue],
+  [() => startValue, () => endValue],
   () => {
-    if (props.autoplay) {
+    if (autoplay) {
       void start();
     }
   },

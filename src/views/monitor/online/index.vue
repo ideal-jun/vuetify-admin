@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -8,7 +8,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks } from '@/hooks/common/table';
+import { getColumnChecks, useTableData } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import { fetchForceLogout, fetchGetOnlineList } from '@/service/api/monitor-online';
 
@@ -48,18 +48,15 @@ function createDefaultSearchModel(): Api.MonitorOnline.SearchModel {
 
 const searchParams = ref<Api.MonitorOnline.SearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
+const checkedRowKeys = shallowRef<string[]>([]);
 
-const data = ref<Api.MonitorOnline.OnlineUser[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-const checkedRowKeys = ref<string[]>([]);
-
-let requestSequence = 0;
+const { data, total, loading, tableOptions, refresh, search } =
+  useTableData<Api.MonitorOnline.OnlineUser>({
+    fetchData: (page) => fetchGetOnlineList({ ...searchParams.value, ...page }),
+    onBeforeLoad: () => {
+      checkedRowKeys.value = [];
+    },
+  });
 
 const { hasAuth } = useAuth();
 
@@ -145,51 +142,19 @@ function formatLoginTime(loginTime?: number | null) {
   return loginTime ? dayjs(loginTime).format('YYYY-MM-DD HH:mm:ss') : '—';
 }
 
-async function loadOnlineUsers() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: onlineList, error } = await fetchGetOnlineList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = onlineList.rows;
-  total.value = onlineList.total;
+interface OnlineTableRow extends Api.MonitorOnline.OnlineUser {
+  initial: string;
+  loginTimeLabel: string;
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadOnlineUsers();
-  },
-  { immediate: true },
+/** The rows with their display labels derived once per page load instead of per render */
+const displayRows = computed<OnlineTableRow[]>(() =>
+  data.value.map((user) => ({
+    ...user,
+    initial: user.userName.slice(0, 1).toUpperCase(),
+    loginTimeLabel: formatLoginTime(user.loginTime),
+  })),
 );
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
 
 function handleColumnChecks(checks: TableColumnCheck[]) {
   updateColumnChecks(checks);
@@ -217,7 +182,7 @@ function handleForceLogout(row: Api.MonitorOnline.OnlineUser) {
       const success = await forceLogout(row.tokenId);
 
       if (success) {
-        handleRefresh();
+        refresh();
       }
     },
   });
@@ -244,7 +209,7 @@ function handleBatchForceLogout() {
         }
       }
 
-      handleRefresh();
+      refresh();
     },
   });
 }
@@ -253,7 +218,7 @@ function handleBatchForceLogout() {
 <template>
   <TablePageLayout :title="$t('page.online.listTitle')">
     <template #search>
-      <OnlineSearch v-model:model="searchParams" @search="handleSearch" />
+      <OnlineSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -261,7 +226,7 @@ function handleBatchForceLogout() {
         :can-batch-delete="false"
         :loading="loading"
         :show-add="false"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
@@ -296,7 +261,7 @@ function handleBatchForceLogout() {
         :hide-default-footer="total === 0"
         hover
         item-value="tokenId"
-        :items="data"
+        :items="displayRows"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
         :loading="loading"
@@ -312,7 +277,7 @@ function handleBatchForceLogout() {
         <template #item.userName="{ item }">
           <div class="flex items-center gap-2.5">
             <VAvatar color="primary" size="32" variant="tonal">
-              <span class="text-xs font-700">{{ item.userName.slice(0, 1).toUpperCase() }}</span>
+              <span class="text-xs font-700">{{ item.initial }}</span>
             </VAvatar>
             <span class="font-500">{{ item.userName }}</span>
           </div>
@@ -339,7 +304,7 @@ function handleBatchForceLogout() {
         </template>
 
         <template #item.loginTime="{ item }">
-          <span class="text-xs opacity-60">{{ formatLoginTime(item.loginTime) }}</span>
+          <span class="text-xs opacity-60">{{ item.loginTimeLabel }}</span>
         </template>
 
         <template #item.actions="{ item }">

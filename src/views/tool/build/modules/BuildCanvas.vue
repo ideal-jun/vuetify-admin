@@ -22,7 +22,7 @@ interface Props {
   activeId: number | null;
 }
 
-const props = defineProps<Props>();
+const { fields, values, activeId } = defineProps<Props>();
 
 const emit = defineEmits<{
   select: [id: number | null];
@@ -36,9 +36,13 @@ const emit = defineEmits<{
 
 const isDragging = computed(() => builderDrag.source !== null);
 
-function typeLabel(type: BuilderFieldType) {
-  return $t(fieldTypeLabelKeys[type]);
-}
+/** Resolve every field type label once, the template only does a lookup */
+const typeLabels = computed(
+  () =>
+    Object.fromEntries(
+      Object.entries(fieldTypeLabelKeys).map(([type, key]) => [type, $t(key)]),
+    ) as Record<BuilderFieldType, string>,
+);
 
 function onItemDragStart(event: DragEvent, index: number) {
   startBuilderDrag('canvas', index);
@@ -78,7 +82,7 @@ function onRootDragOver() {
     return;
   }
 
-  setBuilderDropIndex(props.fields.length);
+  setBuilderDropIndex(fields.length);
 }
 
 function performDrop(event: DragEvent, fallbackIndex: number) {
@@ -104,7 +108,7 @@ function onItemDrop(event: DragEvent, index: number) {
 }
 
 function onRootDrop(event: DragEvent) {
-  performDrop(event, props.fields.length);
+  performDrop(event, fields.length);
 }
 </script>
 
@@ -149,7 +153,7 @@ function onRootDrop(event: DragEvent) {
             </div>
 
             <span class="text-xs font-600 uppercase tracking-wide opacity-50">
-              {{ typeLabel(field.type) }}
+              {{ typeLabels[field.type] }}
             </span>
 
             <VSpacer />

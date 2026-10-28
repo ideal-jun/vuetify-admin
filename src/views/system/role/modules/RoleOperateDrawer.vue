@@ -17,7 +17,7 @@ interface Props {
   rowData?: Api.SystemManage.Role | null;
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -34,7 +34,7 @@ const submitting = ref(false);
 const model = ref<Api.SystemManage.RoleForm>(createDefaultModel());
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.system.role.add') : $t('page.system.role.edit'),
+  operateType === 'add' ? $t('page.system.role.add') : $t('page.system.role.edit'),
 );
 
 const statusOptions = computed(() => translateOptions(enableStatusOptions));
@@ -60,8 +60,8 @@ function createDefaultModel(): Api.SystemManage.RoleForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { roleName, roleKey, roleSort, status, remark } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { roleName, roleKey, roleSort, status, remark } = rowData;
 
     model.value = {
       roleName,
@@ -91,7 +91,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const payload: Api.SystemManage.CreateRole = { ...model.value };
 
       const { error } = await fetchCreateRole(payload);
@@ -102,13 +102,13 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const payload: Api.SystemManage.UpdateRole = {
         ...model.value,
-        roleId: props.rowData.roleId,
+        roleId: rowData.roleId,
       };
 
       const { error } = await fetchUpdateRole(payload);

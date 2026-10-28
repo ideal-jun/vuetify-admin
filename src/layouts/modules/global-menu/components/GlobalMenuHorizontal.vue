@@ -6,7 +6,7 @@ import GlobalMenuItem from './GlobalMenuItem.vue';
 
 defineOptions({ name: 'GlobalMenuHorizontal' });
 
-const props = defineProps<{
+const { items } = defineProps<{
   items: App.Global.Menu[];
 }>();
 
@@ -24,7 +24,7 @@ function navigate(item: App.Global.Menu) {
 
 <template>
   <div class="flex items-center gap-1 overflow-x-auto py-1">
-    <template v-for="item in props.items" :key="item.key">
+    <template v-for="item in items" :key="item.key">
       <VMenu v-if="item.children?.length" location="bottom start" open-on-hover>
         <template #activator="{ props: activatorProps }">
           <VBtn

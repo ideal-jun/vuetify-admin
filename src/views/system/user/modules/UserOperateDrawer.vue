@@ -21,7 +21,7 @@ interface Props {
   roleOptions: CommonType.Option<number>[];
 }
 
-const props = defineProps<Props>();
+const { operateType, rowData, roleOptions } = defineProps<Props>();
 
 const emit = defineEmits<{
   submitted: [];
@@ -37,10 +37,10 @@ const submitting = ref(false);
 
 const model = ref<Api.SystemManage.UserForm>(createDefaultModel());
 
-const showPasswordField = computed(() => props.operateType === 'add');
+const showPasswordField = computed(() => operateType === 'add');
 
 const title = computed(() =>
-  props.operateType === 'add' ? $t('page.system.user.add') : $t('page.system.user.edit'),
+  operateType === 'add' ? $t('page.system.user.add') : $t('page.system.user.edit'),
 );
 
 const sexOptions = computed(() => translateOptions(userSexOptions));
@@ -75,8 +75,8 @@ function createDefaultModel(): Api.SystemManage.UserForm {
 }
 
 function initModel() {
-  if (props.operateType === 'edit' && props.rowData) {
-    const { userName, nickName, sex, phonenumber, email, status, roleIds, roles } = props.rowData;
+  if (operateType === 'edit' && rowData) {
+    const { userName, nickName, sex, phonenumber, email, status, roleIds, roles } = rowData;
 
     model.value = {
       userName,
@@ -109,7 +109,7 @@ async function handleSubmit() {
   submitting.value = true;
 
   try {
-    if (props.operateType === 'add') {
+    if (operateType === 'add') {
       const payload: Api.SystemManage.CreateUser = { ...model.value };
 
       payload.password = payload.password || env.defaultUserPassword;
@@ -122,13 +122,13 @@ async function handleSubmit() {
 
       window.$message?.success($t('common.addSuccess'));
     } else {
-      if (!props.rowData) {
+      if (!rowData) {
         return;
       }
 
       const payload: Api.SystemManage.UpdateUser = {
         ...model.value,
-        userId: props.rowData.userId,
+        userId: rowData.userId,
       };
 
       delete payload.password;

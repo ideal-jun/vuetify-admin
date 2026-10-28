@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
 import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
-import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import type { TableColumnCheck, TablePageRequest } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchBatchDeleteNotice,
@@ -52,54 +52,38 @@ function createDefaultSearchModel(): Api.SystemManage.NoticeSearchModel {
 
 const searchParams = ref<Api.SystemManage.NoticeSearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
-
-const data = ref<Api.SystemManage.Notice[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
-
-let requestSequence = 0;
+const checkedRowKeys = shallowRef<number[]>([]);
 
 /** Build the backend query params, the date range uses the Spring "params[...]" convention */
-function buildSearchParams(): Api.SystemManage.NoticeSearchParams {
+function buildSearchParams({
+  pageNum,
+  pageSize,
+}: TablePageRequest): Api.SystemManage.NoticeSearchParams {
   const { beginTime, endTime, ...rest } = searchParams.value;
 
   return {
     ...rest,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
+    pageNum,
+    pageSize,
     ...(beginTime ? { 'params[beginTime]': beginTime } : {}),
     ...(endTime ? { 'params[endTime]': endTime } : {}),
   };
 }
 
-async function loadNotices() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: noticeList, error } = await fetchGetNoticeList(buildSearchParams());
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = noticeList.rows;
-  total.value = noticeList.total;
-}
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadNotices,
+  refresh,
+  search,
+} = useTableData<Api.SystemManage.Notice>({
+  fetchData: (page) => fetchGetNoticeList(buildSearchParams(page)),
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
+});
 
 const { hasAuth } = useAuth();
 
@@ -107,8 +91,10 @@ const canAdd = computed(() => hasAuth(permissionCodes.noticeAdd));
 const canEdit = computed(() => hasAuth(permissionCodes.noticeEdit));
 const canDelete = computed(() => hasAuth(permissionCodes.noticeDelete));
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.SystemManage.Notice, number>(data, 'noticeId', loadNotices);
+const { drawerVisible, operateType, editingData, handleAdd, handleEdit } = useTableOperate<
+  Api.SystemManage.Notice,
+  number
+>(data, 'noticeId', loadNotices, { checkedRowKeys });
 
 const noticeTypeMap = computed<Record<Api.SystemManage.NoticeType, string>>(() => ({
   '1': $t('page.notice.type.notice'),
@@ -180,30 +166,14 @@ function updateColumnChecks(checks: TableColumnCheck[]) {
   hiddenColumnKeys.value = checks.filter((check) => !check.checked).map((check) => check.key);
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadNotices();
-  },
-  { immediate: true },
-);
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
-
 function handleSubmitted() {
   if (operateType.value === 'add') {
-    tableOptions.page = 1;
+    search();
+
+    return;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function reloadAfterRemove(removedCount: number) {
@@ -211,7 +181,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleDelete(notice: Api.SystemManage.Notice) {
@@ -264,7 +234,7 @@ function handleBatchDelete() {
 <template>
   <TablePageLayout :title="$t('page.notice.listTitle')">
     <template #search>
-      <NoticeSearch v-model:model="searchParams" @search="handleSearch" />
+      <NoticeSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -275,7 +245,7 @@ function handleBatchDelete() {
         :show-batch-delete="checkedRowKeys.length > 0"
         @add="handleAdd"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">

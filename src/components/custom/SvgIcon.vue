@@ -5,7 +5,7 @@ import { normalizeIcon } from '@/utils/icon';
 
 defineOptions({ name: 'SvgIcon', inheritAttrs: false });
 
-const props = defineProps<{
+const { icon, size } = defineProps<{
   /** The icon name, MDI or iconify style */
   icon?: string;
   /** The local svg icon name */
@@ -14,7 +14,7 @@ const props = defineProps<{
   size?: string | number;
 }>();
 
-const iconName = computed(() => normalizeIcon(props.icon));
+const iconName = computed(() => normalizeIcon(icon));
 </script>
 
 <template>

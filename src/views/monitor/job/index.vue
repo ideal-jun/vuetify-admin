@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import TableColumnSetting from '@/components/advanced/TableColumnSetting.vue';
 import TableHeaderOperation from '@/components/advanced/TableHeaderOperation.vue';
@@ -7,7 +7,7 @@ import TablePageLayout from '@/components/advanced/TablePageLayout.vue';
 import { permissionCodes } from '@/constants/business';
 import { useAuth } from '@/hooks/business/auth';
 import type { TableColumnCheck } from '@/hooks/common/table';
-import { getColumnChecks, useTableOperate } from '@/hooks/common/table';
+import { getColumnChecks, useTableData, useTableOperate } from '@/hooks/common/table';
 import { $t } from '@/locales';
 import {
   fetchChangeJobStatus,
@@ -56,22 +56,27 @@ function createDefaultSearchModel(): Api.MonitorJob.SearchModel {
 
 const searchParams = ref<Api.MonitorJob.SearchModel>(createDefaultSearchModel());
 
-const tableOptions = reactive({
-  page: 1,
-  itemsPerPage: 10,
-});
+const checkedRowKeys = shallowRef<number[]>([]);
 
-const data = ref<Api.MonitorJob.Job[]>([]);
-const total = ref(0);
-const loading = ref(false);
-const refreshKey = ref(0);
+const {
+  data,
+  total,
+  loading,
+  tableOptions,
+  load: loadJobs,
+  refresh,
+  search,
+} = useTableData<Api.MonitorJob.Job>({
+  fetchData: (page) => fetchGetJobList({ ...searchParams.value, ...page }),
+  onBeforeLoad: () => {
+    checkedRowKeys.value = [];
+  },
+});
 
 const logDialogVisible = ref(false);
 const logJob = ref<Api.MonitorJob.Job | null>(null);
 const detailDialogVisible = ref(false);
 const detailJobId = ref<number | null>(null);
-
-let requestSequence = 0;
 
 const { hasAuth } = useAuth();
 
@@ -85,8 +90,10 @@ const jobGroupOptions = computed<CommonType.Option<string>[]>(() => [
   { label: $t('page.job.groups.system'), value: 'SYSTEM' },
 ]);
 
-const { drawerVisible, operateType, editingData, handleAdd, handleEdit, checkedRowKeys } =
-  useTableOperate<Api.MonitorJob.Job, number>(data, 'jobId', loadJobs);
+const { drawerVisible, operateType, editingData, handleAdd, handleEdit } = useTableOperate<
+  Api.MonitorJob.Job,
+  number
+>(data, 'jobId', loadJobs, { checkedRowKeys });
 
 const baseHeaders = computed<JobTableHeader[]>(() => [
   { key: 'jobId', title: $t('page.job.columns.jobId'), width: 90, sortable: false },
@@ -162,58 +169,30 @@ function statusLabel(status: Api.MonitorJob.JobStatus) {
   return status === '0' ? $t('page.job.status.normal') : $t('page.job.status.paused');
 }
 
-async function loadJobs() {
-  const sequence = ++requestSequence;
-
-  loading.value = true;
-
-  const { data: jobList, error } = await fetchGetJobList({
-    ...searchParams.value,
-    pageNum: tableOptions.page,
-    pageSize: tableOptions.itemsPerPage,
-  });
-
-  if (sequence !== requestSequence) {
-    return;
-  }
-
-  loading.value = false;
-
-  if (error) {
-    data.value = [];
-    total.value = 0;
-
-    return;
-  }
-
-  data.value = jobList.rows;
-  total.value = jobList.total;
+interface JobTableRow extends Api.MonitorJob.Job {
+  jobGroupLabel: string;
+  statusLabel: string;
+  nextValidTimeLabel: string;
 }
 
-watch(
-  () => [tableOptions.page, tableOptions.itemsPerPage, refreshKey.value],
-  () => {
-    checkedRowKeys.value = [];
-    void loadJobs();
-  },
-  { immediate: true },
+/** The rows with their display labels derived once per page load instead of per render */
+const displayRows = computed<JobTableRow[]>(() =>
+  data.value.map((job) => ({
+    ...job,
+    jobGroupLabel: groupLabel(job.jobGroup),
+    statusLabel: statusLabel(job.status),
+    nextValidTimeLabel: formatDateTime(job.nextValidTime),
+  })),
 );
-
-function handleSearch() {
-  tableOptions.page = 1;
-  refreshKey.value += 1;
-}
-
-function handleRefresh() {
-  refreshKey.value += 1;
-}
 
 function handleSubmitted() {
   if (operateType.value === 'add') {
-    tableOptions.page = 1;
+    search();
+
+    return;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function reloadAfterRemove(removedCount: number) {
@@ -221,7 +200,7 @@ function reloadAfterRemove(removedCount: number) {
     tableOptions.page -= 1;
   }
 
-  refreshKey.value += 1;
+  refresh();
 }
 
 function handleDelete(job: Api.MonitorJob.Job) {
@@ -285,7 +264,7 @@ function handleStatusChange(job: Api.MonitorJob.Job, nextStatus: Api.MonitorJob.
       }
 
       window.$message?.success($t('page.job.actions.changeStatusSuccess'));
-      refreshKey.value += 1;
+      refresh();
     },
   });
 }
@@ -322,7 +301,7 @@ function openDetail(job: Api.MonitorJob.Job) {
 <template>
   <TablePageLayout :title="$t('page.job.listTitle')">
     <template #search>
-      <JobSearch v-model:model="searchParams" @search="handleSearch" />
+      <JobSearch v-model:model="searchParams" @search="search" />
     </template>
 
     <template #actions>
@@ -333,7 +312,7 @@ function openDetail(job: Api.MonitorJob.Job) {
         :show-batch-delete="checkedRowKeys.length > 0"
         @add="handleAdd"
         @batch-delete="handleBatchDelete"
-        @refresh="handleRefresh"
+        @refresh="refresh"
       >
         <template #prefix>
           <VChip v-if="checkedRowKeys.length > 0" color="primary" size="small" variant="tonal">
@@ -361,7 +340,7 @@ function openDetail(job: Api.MonitorJob.Job) {
         :hide-default-footer="total === 0"
         hover
         item-value="jobId"
-        :items="data"
+        :items="displayRows"
         :items-length="total"
         :items-per-page-options="pageSizeOptions"
         :loading="loading"
@@ -384,9 +363,7 @@ function openDetail(job: Api.MonitorJob.Job) {
         </template>
 
         <template #item.jobGroup="{ item }">
-          <VChip color="primary" size="small" variant="tonal">{{
-            groupLabel(item.jobGroup)
-          }}</VChip>
+          <VChip color="primary" size="small" variant="tonal">{{ item.jobGroupLabel }}</VChip>
         </template>
 
         <template #item.invokeTarget="{ item }">
@@ -412,12 +389,12 @@ function openDetail(job: Api.MonitorJob.Job) {
             size="small"
             variant="tonal"
           >
-            {{ statusLabel(item.status) }}
+            {{ item.statusLabel }}
           </VChip>
         </template>
 
         <template #item.nextValidTime="{ item }">
-          <span class="text-xs opacity-60">{{ formatDateTime(item.nextValidTime) }}</span>
+          <span class="text-xs opacity-60">{{ item.nextValidTimeLabel }}</span>
         </template>
 
         <template #item.actions="{ item }">

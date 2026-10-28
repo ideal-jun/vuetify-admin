@@ -15,21 +15,18 @@ import UserAvatar from './components/UserAvatar.vue';
 
 defineOptions({ name: 'GlobalHeader' });
 
-const props = withDefaults(
-  defineProps<{
-    /** Whether to show the logo */
-    showLogo?: boolean;
-    /** Whether to show the sider toggler */
-    showMenuToggler?: boolean;
-    /** The menus rendered in the header */
-    menus?: App.Global.Menu[];
-  }>(),
-  {
-    showLogo: false,
-    showMenuToggler: false,
-    menus: () => [],
-  },
-);
+const {
+  showLogo = false,
+  showMenuToggler = false,
+  menus = [],
+} = defineProps<{
+  /** Whether to show the logo */
+  showLogo?: boolean;
+  /** Whether to show the sider toggler */
+  showMenuToggler?: boolean;
+  /** The menus rendered in the header */
+  menus?: App.Global.Menu[];
+}>();
 
 const appStore = useAppStore();
 const themeStore = useThemeStore();
@@ -51,8 +48,8 @@ const themeStore = useThemeStore();
       @click="appStore.toggleSiderCollapse"
     />
 
-    <div v-if="props.menus.length > 0" class="flex-1-hidden pl-2">
-      <GlobalMenuHorizontal :items="props.menus" />
+    <div v-if="menus.length > 0" class="flex-1-hidden pl-2">
+      <GlobalMenuHorizontal :items="menus" />
     </div>
 
     <div v-else class="flex-1-hidden">

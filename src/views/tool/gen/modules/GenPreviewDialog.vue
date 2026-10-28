@@ -13,7 +13,7 @@ interface Props {
   tableName?: string | null;
 }
 
-const props = defineProps<Props>();
+const { tableId, tableName } = defineProps<Props>();
 
 const visible = defineModel<boolean>('visible', { required: true });
 
@@ -47,7 +47,7 @@ function countLines(content: string) {
 }
 
 async function loadPreview() {
-  if (!props.tableId) {
+  if (!tableId) {
     previewMap.value = {};
     activePath.value = '';
 
@@ -59,7 +59,7 @@ async function loadPreview() {
   activePath.value = '';
 
   try {
-    const { data, error } = await fetchPreviewGenTable(props.tableId);
+    const { data, error } = await fetchPreviewGenTable(tableId);
 
     if (error) {
       return;

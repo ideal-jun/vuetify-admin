@@ -21,7 +21,7 @@ interface Props {
   initialTab: PreviewTab;
 }
 
-const props = defineProps<Props>();
+const { fields, form, initialTab } = defineProps<Props>();
 
 const visible = defineModel<boolean>('visible', { required: true });
 
@@ -32,8 +32,8 @@ const { formRef, validate, resetValidation } = useVuetifyForm();
 const tab = ref<PreviewTab>('preview');
 const previewValues = ref<Record<string, unknown>>({});
 
-const json = computed(() => stringifyDocument(props.form, props.fields));
-const code = computed(() => generateVueCode(props.form, props.fields));
+const json = computed(() => stringifyDocument(form, fields));
+const code = computed(() => generateVueCode(form, fields));
 const activeText = computed(() => (tab.value === 'code' ? code.value : json.value));
 const canCopy = computed(() => tab.value !== 'preview');
 
@@ -42,14 +42,14 @@ watch(visible, (value) => {
     return;
   }
 
-  tab.value = props.initialTab;
+  tab.value = initialTab;
   resetPreview();
 });
 
 function resetPreview() {
   const values: Record<string, unknown> = {};
 
-  for (const field of props.fields) {
+  for (const field of fields) {
     if (field.type !== 'button') {
       values[field.model] = createInitialValue(field);
     }
